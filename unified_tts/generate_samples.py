@@ -86,7 +86,7 @@ def write_html(out_dir, metadata):
         ".meta{color:#666;font-size:.85rem}.voice{background:#f7f7f7;padding:.75rem;border-radius:8px;margin-bottom:.75rem}",
         ".sub{color:#555;margin-bottom:2rem}</style></head><body>",
         "<h1>Unified IPA TTS Samples</h1>",
-        f"<div class=\"sub\">Generated from text through T5 + language-specific G2P. Checkpoint: {html.escape(metadata['checkpoint'])}</div>",
+        f"<div class=\"sub\">Frontend: africa-g2p · Kolokwa T5: {'on' if metadata.get('t5') else 'off'} · Checkpoint: {html.escape(metadata['checkpoint'])}</div>",
     ]
     by_lang = defaultdict(list)
     for sample in metadata["samples"]:
