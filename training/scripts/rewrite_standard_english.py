@@ -4,7 +4,6 @@ import os
 import random
 import threading
 import time
-import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -49,21 +48,23 @@ def read_keys(key_file):
     return keys
 
 
-def load_cache(path):
+def load_cache(paths):
     cache = {}
-    if not Path(path).exists():
-        return cache
-    with Path(path).open(encoding="utf-8") as fin:
-        for line in fin:
-            row = json.loads(line)
-            if row.get("id") and row.get("rewrite"):
-                cache[row["id"]] = row["rewrite"]
+    for path in paths:
+        if not Path(path).exists():
+            continue
+        with Path(path).open(encoding="utf-8") as fin:
+            for line in fin:
+                row = json.loads(line)
+                if row.get("id") and row.get("rewrite"):
+                    cache[row["id"]] = row["rewrite"]
     return cache
 
 
-def collect(manifests, cache, limit):
+def collect(manifests, cache, limit, key_index, key_count):
     rows = []
     seen = set()
+    total = 0
     for manifest in manifests:
         with Path(manifest).open(encoding="utf-8") as fin:
             for line in fin:
@@ -75,39 +76,27 @@ def collect(manifests, cache, limit):
                 if not row_id or not text or row_id in seen or row_id in cache:
                     continue
                 seen.add(row_id)
-                rows.append({"id": row_id, "text": text, "index": len(rows)})
+                index = total
+                total += 1
+                if index % key_count == key_index:
+                    rows.append({"id": row_id, "text": text, "index": index})
                 if limit and len(rows) >= limit:
                     return rows
     return rows
 
 
-def rewrite_one(row, keys, model):
-    key = keys[row["index"] % len(keys)]
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-    payload = {
-        "contents": [{"parts": [{"text": PROMPT.format(text=row["text"])}]}],
-        "generationConfig": {
-            "temperature": 0.2,
-            "topP": 0.8,
-            "maxOutputTokens": 128,
-        },
-    }
-    data = json.dumps(payload).encode("utf-8")
+def rewrite_one(row, backend, model):
+    from afrispeech_synth import generate_text
+
     last_error = None
     for attempt in range(6):
         try:
-            request = urllib.request.Request(
-                url,
-                data=data,
-                headers={
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": key,
-                },
-                method="POST",
-            )
-            with urllib.request.urlopen(request, timeout=60) as response:
-                result = json.load(response)
-            text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
+            text = generate_text(
+                PROMPT.format(text=row["text"]),
+                language="eng",
+                backend=backend,
+                model=model,
+            ).strip()
             text = text.strip('"').strip("'").strip()
             if text:
                 return text
@@ -123,21 +112,37 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--manifests", nargs="+", required=True)
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--model", default=os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"))
+    ap.add_argument("--backend", choices=["gemini", "gemini-live"], default="gemini-live")
+    ap.add_argument("--model")
     ap.add_argument("--key-file", type=Path, default=os.environ.get("GEMINI_KEY_FILE"))
-    ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--key-index", type=int, default=0)
+    ap.add_argument("--key-count", type=int, default=1)
+    ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
 
     keys = read_keys(args.key_file)
-    cache = load_cache(args.out)
-    rows = collect(args.manifests, cache, args.limit)
-    print(f"rewriting {len(rows):,} rows with {args.model} using {len(keys)} keys; {len(cache):,} cached", flush=True)
+    if args.key_index >= len(keys):
+        raise SystemExit(f"key-index {args.key_index} out of range for {len(keys)} keys")
+    os.environ["GEMINI_API_KEY"] = keys[args.key_index]
+    model = args.model or (
+        "models/gemini-3.1-flash-live-preview"
+        if args.backend == "gemini-live"
+        else "gemini-3.1-flash-tts-preview"
+    )
+
+    cache = load_cache([args.out])
+    rows = collect(args.manifests, cache, args.limit, args.key_index, args.key_count)
+    print(
+        f"rewriting {len(rows):,} rows with {args.backend}/{model} key {args.key_index + 1}/{len(keys)}; "
+        f"{len(cache):,} cached",
+        flush=True,
+    )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     lock = threading.Lock()
     done = 0
     with args.out.open("a", encoding="utf-8") as fout, ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {pool.submit(rewrite_one, row, keys, args.model): row for row in rows}
+        futures = {pool.submit(rewrite_one, row, args.backend, model): row for row in rows}
         for future in as_completed(futures):
             row = futures[future]
             rewrite = future.result()
@@ -146,8 +151,8 @@ def main():
                 fout.flush()
                 done += 1
                 if done % 100 == 0:
-                    print(f"rewritten {done:,}/{len(rows):,}", flush=True)
-    print(f"done: {done:,} rewrites in {args.out}", flush=True)
+                    print(f"key {args.key_index}: rewritten {done:,}/{len(rows):,}", flush=True)
+    print(f"done: key {args.key_index} wrote {done:,} rewrites to {args.out}", flush=True)
 
 
 if __name__ == "__main__":

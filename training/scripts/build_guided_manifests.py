@@ -6,15 +6,14 @@ from pathlib import Path
 TEXT_LANGS = {"kolokwa", "liberian_english"}
 
 
-def load_rewrite_cache(path):
+def load_rewrite_cache(paths):
     cache = {}
-    if not path:
-        return cache
-    with Path(path).open(encoding="utf-8") as fin:
-        for line in fin:
-            row = json.loads(line)
-            if row.get("id") and row.get("rewrite"):
-                cache[row["id"]] = row["rewrite"]
+    for path in paths or []:
+        with Path(path).open(encoding="utf-8") as fin:
+            for line in fin:
+                row = json.loads(line)
+                if row.get("id") and row.get("rewrite"):
+                    cache[row["id"]] = row["rewrite"]
     return cache
 
 
@@ -157,7 +156,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--train-in")
     ap.add_argument("--valid-in")
-    ap.add_argument("--rewrite-cache", type=Path)
+    ap.add_argument("--rewrite-cache", nargs="+", type=Path)
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)

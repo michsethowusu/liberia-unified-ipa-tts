@@ -24,15 +24,23 @@ pip install -r requirements.txt
 Liberian English rows are relabeled `kolokwa` and duplicated: one row keeps the Liberian English transcript, and one row uses a Gemini-rewritten standard English transcript. Loma and Kpelle keep `africa-g2p` IPA. A fresh tokenizer is trained over this mixed target field, the text embedding is reset, and all other weights are seeded from the previous best EMA checkpoint.
 
 ```bash
-export GEMINI_API_KEY=...  # or pass --key-file with one key per line
-python training/scripts/rewrite_standard_english.py \
-  --manifests /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/train.jsonl /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl \
-  --out /mnt/volume_d2wey28/data/unified_guided_tts/rewrites/gemini_standard_english.jsonl
+pip install "afrispeech-synth[gemini] @ git+https://github.com/michsethowusu/gemini-datagen.git"
+
+KEYS=/mnt/volume_d2wey28/.secrets/gemini_keys.txt
+N=$(grep -cve '^[[:space:]]*$' "$KEYS")
+for i in $(seq 0 $((N - 1))); do
+  python training/scripts/rewrite_standard_english.py \
+    --manifests /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/train.jsonl /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl \
+    --out /mnt/volume_d2wey28/data/unified_guided_tts/rewrites/shard_${i}.jsonl \
+    --key-file "$KEYS" --key-index "$i" --key-count "$N" \
+    --backend gemini-live --workers 3 &
+done
+wait
 
 python training/scripts/build_guided_manifests.py \
   --train-in /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/train.jsonl \
   --valid-in /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl \
-  --rewrite-cache /mnt/volume_d2wey28/data/unified_guided_tts/rewrites/gemini_standard_english.jsonl \
+  --rewrite-cache /mnt/volume_d2wey28/data/unified_guided_tts/rewrites/shard_*.jsonl \
   --out /mnt/volume_d2wey28/data/unified_guided_tts/manifests
 
 bash training/scripts/build_guided_tokenizer.sh
