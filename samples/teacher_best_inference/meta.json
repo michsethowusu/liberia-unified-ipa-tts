@@ -14,7 +14,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kolokwa_voice.wav",
       "voice_rel": "audio/kolokwa_voice.wav",
       "source": "kolokwa_movies",
-      "source_id": "kolokwa_movies:LIR_MOV_qaUQt_gwWwQ_0346"
+      "source_id": "kolokwa_movies:LIR_MOV_qaUQt_gwWwQ_0346",
+      "input_text": "Na literary play that for Grandpa's candle. Steer your advocacy for Grandpa."
     },
     {
       "language": "kolokwa",
@@ -26,7 +27,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kolokwa_voice.wav",
       "voice_rel": "audio/kolokwa_voice.wav",
       "source": "kolokwa_movies",
-      "source_id": "kolokwa_movies:LIR_MOV_B9M7RmhVmEc_0488"
+      "source_id": "kolokwa_movies:LIR_MOV_B9M7RmhVmEc_0488",
+      "input_text": "But why you just changing the spelling of the word? When we come out, you change it. When we come on the other side, you change it again."
     },
     {
       "language": "kolokwa",
@@ -38,7 +40,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kolokwa_voice.wav",
       "voice_rel": "audio/kolokwa_voice.wav",
       "source": "kolokwa_movies",
-      "source_id": "kolokwa_movies:LIR_MOV_NJIGg6fnHcA_0290"
+      "source_id": "kolokwa_movies:LIR_MOV_NJIGg6fnHcA_0290",
+      "input_text": "And the Justice Ministry, they are saying, no, we have the evidence."
     },
     {
       "language": "liberian_english",
@@ -50,7 +53,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/liberian_english_voice.wav",
       "voice_rel": "audio/liberian_english_voice.wav",
       "source": "liberian_english",
-      "source_id": "liberian_english:LIR_MOV_l-BIJHEDDfQ_0100"
+      "source_id": "liberian_english:LIR_MOV_l-BIJHEDDfQ_0100",
+      "input_text": "you know, making decisions about the country's monetary policy."
     },
     {
       "language": "liberian_english",
@@ -62,7 +66,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/liberian_english_voice.wav",
       "voice_rel": "audio/liberian_english_voice.wav",
       "source": "kolokwa_jw_formal",
-      "source_id": "kolokwa_jw:w_202304_2023366_p024_s00"
+      "source_id": "kolokwa_jw:w_202304_2023366_p024_s00",
+      "input_text": "Let talk about something else that can make our faith strong: that personal study. Susan say it can help her when she make schedule to study."
     },
     {
       "language": "liberian_english",
@@ -74,7 +79,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/liberian_english_voice.wav",
       "voice_rel": "audio/liberian_english_voice.wav",
       "source": "liberian_english",
-      "source_id": "liberian_english:LIR_MOV_l-BIJHEDDfQ_0413"
+      "source_id": "liberian_english:LIR_MOV_l-BIJHEDDfQ_0413",
+      "input_text": "as a contrary to a commodity those new seats that are being apportioned"
     },
     {
       "language": "loma",
@@ -86,7 +92,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/loma_voice.wav",
       "voice_rel": "audio/loma_voice.wav",
       "source": "loma",
-      "source_id": "loma:w_202604_2026365_p074_s00"
+      "source_id": "loma:w_202604_2026365_p074_s00",
+      "input_text": "E boni ga nui nii e yee ɓadoga ba, na ɣa ga Ziizɛ ɔ va e nu ɓuse wũ-maa-wo faa yowũ ɓɔga saa ya."
     },
     {
       "language": "loma",
@@ -98,7 +105,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/loma_voice.wav",
       "voice_rel": "audio/loma_voice.wav",
       "source": "loma",
-      "source_id": "loma:mwb_202509_202025329_p009_s00"
+      "source_id": "loma:mwb_202509_202025329_p009_s00",
+      "input_text": "Faa ɓigii ɣa ga yiɛ Jehova ʋeli ga e ɣigii"
     },
     {
       "language": "loma",
@@ -110,7 +118,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/loma_voice.wav",
       "voice_rel": "audio/loma_voice.wav",
       "source": "loma",
-      "source_id": "loma:w_202604_2026367_p024_s00"
+      "source_id": "loma:w_202604_2026367_p024_s00",
+      "input_text": "Numaa ɣaa-zaɣa-kɛ ga te ɓɔ e va. Yɛpɛ kuuwu wũ-tuo nui ta wɔ, ɔɔ ya ziɛ-pului ta e laila e vile velei va e ɣi-gaa-ziɛzu la."
     },
     {
       "language": "kpelle",
@@ -122,7 +131,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kpelle_voice.wav",
       "voice_rel": "audio/kpelle_voice.wav",
       "source": "kpelle",
-      "source_id": "kpelle:w_202605_2026402_p012_s02"
+      "source_id": "kpelle:w_202605_2026402_p012_s02",
+      "input_text": "Da pɔri kpiŋ kpɔnii ma a gɛɛ e ŋɛi kɛ mɛni-ŋuŋ ta maa-kɔriɛ ma a tãi gaa nii la kɔlɔ-pɛrɛ mui nyii pai kpɔnii ma a gɛɛ e tii lɛlɛɛ sɔlɔ ɓo kpaa e gbiŋ kpɛtɛ kɔlɔ-pɛrɛ takpɛni mɛni ma."
     },
     {
       "language": "kpelle",
@@ -134,7 +144,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kpelle_voice.wav",
       "voice_rel": "audio/kpelle_voice.wav",
       "source": "kpelle",
-      "source_id": "kpelle:w_202502_2025292_p060_s00"
+      "source_id": "kpelle:w_202502_2025292_p060_s00",
+      "input_text": "Le mɛni ɓe maa nɛ̃ɛi ku tãi tɛɛ la kukpiŋ pɔ a gɛɛ kulii ŋaa e yeŋ? (Ya pɔri ŋɔnɔ votoo-ŋai kaai.)"
     },
     {
       "language": "kpelle",
@@ -146,7 +157,8 @@
       "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kpelle_voice.wav",
       "voice_rel": "audio/kpelle_voice.wav",
       "source": "kpelle",
-      "source_id": "kpelle:mwb_202303_202023084_p014_s00"
+      "source_id": "kpelle:mwb_202303_202023084_p014_s00",
+      "input_text": "Nene-polu Naa-kaa Viloi: (Mini five) Ka lono e pilaŋ ma. Viloi ŋi lɛ."
     }
   ]
 }
