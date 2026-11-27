@@ -167,22 +167,68 @@ def sample_balanced_le(rows, balance_to, seed=2026):
     return sampled
 
 
-def convert(inp, out, rewrites, balance_to):
+def load_hifi(path, hours, seed, prefix):
+    rows = []
+    with Path(path).open(encoding="utf-8") as fin:
+        for line in fin:
+            row = json.loads(line)
+            duration = float(row.get("duration", 0))
+            text = str(row.get("transcript") or "").strip()
+            if not text or duration <= 0 or duration > 30:
+                continue
+            rows.append(
+                {
+                    "id": f"hifi_{prefix}_{len(rows):07d}",
+                    "language": "english",
+                    "text_style": "standard_english",
+                    "condition_prefix": condition_prefix("english", "english_tts"),
+                    "g2p": "eng",
+                    "iso": "eng",
+                    "transcript": text,
+                    "transcript_orig": text,
+                    "words": row.get("words") or [],
+                    "duration": duration,
+                    "path": row.get("path"),
+                    "start": float(row.get("start", 0.0)),
+                    "source": row.get("source", "hifitts2"),
+                    "split": prefix,
+                }
+            )
+    random.Random(seed).shuffle(rows)
+    chosen = []
+    total = 0.0
+    for row in rows:
+        if total >= hours:
+            break
+        chosen.append(row)
+        total += row["duration"] / 3600.0
+    print(f"hifi {prefix}: selected {len(chosen):,} rows / {total:.2f}h (target {hours:.2f}h)", flush=True)
+    return chosen
+
+
+def write_row(fout, row, counts, hours, skipped):
+    if not row.get("transcript") or not row.get("words") or not Path(str(row.get("path", ""))).exists():
+        skipped += 1
+        return skipped
+    fout.write(json.dumps(row, ensure_ascii=False) + "\n")
+    key = f"{row.get('language', 'unknown')}/{row.get('text_style', 'ipa')}"
+    counts[key] += 1
+    hours[key] += float(row.get("duration", 0)) / 3600.0
+    return skipped
+
+
+def convert(inp, out, rewrites, balance_to, hifi_in, hifi_hours, hifi_prefix):
     counts = defaultdict(int)
     hours = defaultdict(float)
     skipped = 0
     rows = sample_balanced_le(load_rows(inp), balance_to)
+    hifi_rows = load_hifi(hifi_in, hifi_hours, 2026, hifi_prefix) if hifi_in else []
     with Path(out).open("w", encoding="utf-8") as fout:
         for row in rows:
-            results = transform_row(row, rewrites)
-            for result in results:
-                if not result.get("transcript") or not result.get("words"):
-                    skipped += 1
-                    continue
-                fout.write(json.dumps(result, ensure_ascii=False) + "\n")
-                key = f"{result.get('language', 'unknown')}/{result.get('text_style', 'ipa')}"
-                counts[key] += 1
-                hours[key] += float(result.get("duration", 0)) / 3600.0
+            for result in transform_row(row, rewrites):
+                skipped = write_row(fout, result, counts, hours, skipped)
+        for row in hifi_rows:
+            skipped = write_row(fout, row, counts, hours, skipped)
     print(f"wrote {out}: {sum(counts.values()):,} rows, {sum(hours.values()):.2f} h, {skipped:,} skipped", flush=True)
     for key in sorted(counts):
         print(f"  {key}: {counts[key]:,} rows, {hours[key]:.2f} h", flush=True)
@@ -194,15 +240,35 @@ def main():
     ap.add_argument("--valid-in")
     ap.add_argument("--rewrite-cache", nargs="+", type=Path)
     ap.add_argument("--balance-le-to", default="kolokwa")
+    ap.add_argument("--hifi-train", type=Path)
+    ap.add_argument("--hifi-valid", type=Path)
+    ap.add_argument("--hifi-train-hours", type=float, default=20.0)
+    ap.add_argument("--hifi-valid-hours", type=float, default=0.5)
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     rewrites = load_rewrite_cache(args.rewrite_cache)
     print(f"loaded {len(rewrites):,} standard-English rewrites", flush=True)
     if args.train_in:
-        convert(args.train_in, args.out / "train.jsonl", rewrites, args.balance_le_to)
+        convert(
+            args.train_in,
+            args.out / "train.jsonl",
+            rewrites,
+            args.balance_le_to,
+            args.hifi_train,
+            args.hifi_train_hours,
+            "train",
+        )
     if args.valid_in:
-        convert(args.valid_in, args.out / "valid.jsonl", rewrites, args.balance_le_to)
+        convert(
+            args.valid_in,
+            args.out / "valid.jsonl",
+            rewrites,
+            args.balance_le_to,
+            args.hifi_valid,
+            args.hifi_valid_hours,
+            "valid",
+        )
 
 
 if __name__ == "__main__":

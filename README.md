@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 ## Guided finetune data
 
-Liberian English rows are relabeled `kolokwa`, subsampled to match the Kolokwa hours, and duplicated: one row keeps the Liberian English transcript, and one row uses a Gemini-rewritten standard English transcript. Kolokwa rows are duplicated the same way so the model accepts standard English prompts but speaks Kolokwa. Loma and Kpelle keep `africa-g2p` IPA. Language/style conditioning is a leading reserved token (`<lang:kolokwa>`, `<lang:liberian_english>`, `<lang:standard_english>`, `<lang:loma>`, `<lang:kpelle>`) stored as `condition_prefix` in each manifest row; standard-English prompts paired with Kolokwa/Liberian-English audio use `<lang:kolokwa>` so the model speaks Kolokwa. The H200 loader prepends it after word-cuts, and inference passes the same token. A fresh tokenizer is trained with those tokens reserved, the text embedding is reset, and all other weights are seeded from the previous best EMA checkpoint.
+Liberian English rows are relabeled `kolokwa`, subsampled to match the Kolokwa hours, and duplicated: one row keeps the Liberian English transcript, and one row uses a Gemini-rewritten standard English transcript. Kolokwa rows are duplicated the same way so the model accepts standard English prompts but speaks Kolokwa. Loma and Kpelle keep `africa-g2p` IPA. Language/style conditioning is a leading reserved token (`<lang:kolokwa>`, `<lang:liberian_english>`, `<lang:standard_english>`, `<lang:loma>`, `<lang:kpelle>`) stored as `condition_prefix` in each manifest row; standard-English prompts paired with Kolokwa/Liberian-English audio use `<lang:kolokwa>` so the model speaks Kolokwa. The H200 loader prepends it after word-cuts, and inference passes the same token. A fresh tokenizer is trained with those tokens reserved, the text embedding is reset, and the rest is finetuned from `AfriSpeech/africa-tts-base` rather than from scratch. A small HiFiTTS-2 replay set keeps standard English speech (`<lang:standard_english>`) from being forgotten.
 
 ```bash
 pip install "afrispeech-synth[gemini] @ git+https://github.com/michsethowusu/gemini-datagen.git"
@@ -42,10 +42,12 @@ python training/scripts/build_guided_manifests.py \
   --valid-in /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl \
   --rewrite-cache /mnt/volume_d2wey28/data/unified_guided_tts/rewrites/shard_*.jsonl \
   --balance-le-to kolokwa \
+  --hifi-train /mnt/volume_d2wey28/data/africa-tts/aligned_ctc/hifitts2_train.jsonl \
+  --hifi-valid /mnt/volume_d2wey28/data/africa-tts/aligned_ctc/hifitts2_valid.jsonl \
+  --hifi-train-hours 20 --hifi-valid-hours 0.5 \
   --out /mnt/volume_d2wey28/data/unified_guided_tts/manifests
 
 bash training/scripts/build_guided_tokenizer.sh
-bash training/scripts/seed_guided.sh
 bash training/scripts/train_guided.sh
 ```
 

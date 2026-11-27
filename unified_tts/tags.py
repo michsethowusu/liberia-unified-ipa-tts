@@ -10,6 +10,7 @@ STYLE_PREFIXES = {
     "kolokwa": "<lang:kolokwa>",
     "liberian_english": "<lang:liberian_english>",
     "standard_english": "<lang:kolokwa>",
+    "english_tts": "<lang:standard_english>",
 }
 
 
