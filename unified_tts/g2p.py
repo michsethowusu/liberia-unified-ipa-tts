@@ -1,26 +1,27 @@
-from functools import lru_cache
-
-from huggingface_hub import hf_hub_download
-
-AFRICA_G2P_CODES = {"loma": "lom", "kpelle": "xpe"}
-DEEP_PHONEMIZER_MODELS = {
-    "kolokwa": "michsethowusu/kolokwa-g2p-bible",
-    "liberian_english": "michsethowusu/kolokwa-g2p-jw",
+AFRICA_G2P_CODES = {
+    "kolokwa": "eng",
+    "liberian_english": "eng",
+    "loma": "lom",
+    "kpelle": "xpe",
 }
-T5_LANGS = {"kolokwa", "liberian_english"}
-SUPPORTED_LANGS = set(DEEP_PHONEMIZER_MODELS) | set(AFRICA_G2P_CODES)
+T5_LANGS = {"kolokwa"}
+SUPPORTED_LANGS = set(AFRICA_G2P_CODES)
 
 
 def normalize_lang(lang):
-    key = lang.strip().lower().replace("-", "_").replace(" ", "_")
+    key = str(lang).strip().lower().replace("-", "_").replace(" ", "_")
     aliases = {
         "english": "liberian_english",
         "liberian": "liberian_english",
+        "liberian_english": "liberian_english",
         "lir": "liberian_english",
         "kpe": "kpelle",
         "xpe": "kpelle",
+        "kpelle": "kpelle",
         "loi": "loma",
         "lom": "loma",
+        "loma": "loma",
+        "kolokwa": "kolokwa",
     }
     key = aliases.get(key, key)
     if key not in SUPPORTED_LANGS:
@@ -28,37 +29,11 @@ def normalize_lang(lang):
     return key
 
 
-@lru_cache(maxsize=None)
-def load_phonemizer(repo_id):
-    import torch
-    from phonemize import Phonemizer
-
-    checkpoint = hf_hub_download(repo_id=repo_id, filename="best_model.pt")
-    original_load = torch.load
-    try:
-        torch.load = lambda *args, **kwargs: original_load(*args, weights_only=False, **kwargs)
-        return Phonemizer.from_checkpoint(checkpoint)
-    finally:
-        torch.load = original_load
-
-
-def deep_phonemizer(text, lang):
-    repo_id = DEEP_PHONEMIZER_MODELS[lang]
-    phonemizer = load_phonemizer(repo_id)
-    return phonemizer(text, lang="en_lr").strip()
-
-
-def africa_g2p_phonemizer(text, lang):
+def to_ipa(text, lang):
     from africa_g2p import g2p as africa_g2p
 
-    return africa_g2p(text, lang=AFRICA_G2P_CODES[lang], output="ipa").strip()
-
-
-def to_ipa(text, lang):
     lang = normalize_lang(lang)
     text = " ".join(str(text).strip().split())
     if not text:
         return ""
-    if lang in DEEP_PHONEMIZER_MODELS:
-        return deep_phonemizer(text, lang)
-    return africa_g2p_phonemizer(text, lang)
+    return africa_g2p(text, lang=AFRICA_G2P_CODES[lang], output="ipa").strip()

@@ -124,7 +124,8 @@ def main():
     parser.add_argument("--cfg", type=float, default=2.0)
     parser.add_argument("--temperature", type=float, default=0.3)
     parser.add_argument("--seed", type=int, default=2026)
-    parser.add_argument("--no-t5", action="store_true")
+    parser.add_argument("--t5", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-t5", action="store_true", help="Disable Kolokwa T5 normalization")
     args = parser.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)
@@ -167,6 +168,7 @@ def main():
         "cfg": args.cfg,
         "temperature": args.temperature,
         "t5": not args.no_t5,
+        "frontend": "africa-g2p",
         "prompts": str(args.prompts) if args.prompts else None,
         "samples": [],
     }

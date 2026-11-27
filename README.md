@@ -4,10 +4,12 @@ Training and inference code for the unified IPA Pocket TTS model covering Kolokw
 
 ## Inference pipeline
 
-- `kolokwa` text passes through `AfriSpeech/t5-small-english-kolokwa`, then `michsethowusu/kolokwa-g2p-bible`.
-- `liberian_english` text passes through `AfriSpeech/t5-small-english-kolokwa`, then `michsethowusu/kolokwa-g2p-jw`.
-- `loma` text uses `africa-g2p` with code `lom`.
-- `kpelle` text uses `africa-g2p` with code `xpe`.
+- All four languages use `africa-g2p` as the text frontend before the TTS model.
+- `kolokwa`: text -> `AfriSpeech/t5-small-english-kolokwa` -> `africa-g2p` code `eng` -> TTS model.
+- `liberian_english`: text -> `africa-g2p` code `eng` -> TTS model.
+- `loma`: text -> `africa-g2p` code `lom` -> TTS model.
+- `kpelle`: text -> `africa-g2p` code `xpe` -> TTS model.
+- Use `--no-t5` to disable Kolokwa T5 normalization.
 - The TTS model consumes IPA only. Language labels are metadata, not conditioning tokens.
 
 ## Setup
@@ -28,7 +30,7 @@ python -m unified_tts.cli \
   --out out/kolokwa.wav
 ```
 
-Use `--no-t5` to disable T5 normalization. Use `--cfg 1.0` for a distilled model.
+Use `--no-t5` to disable Kolokwa T5 normalization. Use `--cfg 1.0` for a distilled model.
 
 ## Regenerate sample page
 
