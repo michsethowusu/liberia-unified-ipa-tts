@@ -13,7 +13,7 @@ for i in $(seq 0 $((N - 1))); do
     --manifests "$DATA/manifests/train.jsonl" "$DATA/manifests/valid.jsonl" \
     --out "$OUT/shard_${i}.jsonl" \
     --key-file "$KEYS" --key-index "$i" --key-count "$N" \
-    --backend gemini-live --workers 3 \
+    --backend gemini-live --balance-le-to kolokwa --workers 3 \
     > "$OUT/shard_${i}.log" 2>&1 &
 done
 wait

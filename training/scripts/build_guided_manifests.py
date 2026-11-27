@@ -1,5 +1,6 @@
 import argparse
 import json
+import random
 from collections import defaultdict
 from pathlib import Path
 
@@ -104,6 +105,7 @@ def text_row(row):
 
 
 def transform_row(row, rewrites):
+    row = {key: value for key, value in row.items() if key != "_index"}
     source_language = row.get("language", "")
     if source_language not in TEXT_LANGS:
         return [row]
@@ -130,23 +132,53 @@ def transform_row(row, rewrites):
     return [base, standard]
 
 
-def convert(inp, out, rewrites):
+def load_rows(path):
+    rows = []
+    with Path(path).open(encoding="utf-8") as fin:
+        for line in fin:
+            row = json.loads(line)
+            row["_index"] = len(rows)
+            rows.append(row)
+    return rows
+
+
+def sample_balanced_le(rows, balance_to, seed=2026):
+    if not balance_to:
+        return rows
+    target = sum(float(r.get("duration", 0)) for r in rows if r.get("language") == balance_to) / 3600.0
+    le_rows = [r for r in rows if r.get("language") == "liberian_english"]
+    if not target or not le_rows:
+        return rows
+    pool = list(le_rows)
+    random.Random(seed).shuffle(pool)
+    chosen = set()
+    hours = 0.0
+    for row in pool:
+        if hours >= target:
+            break
+        chosen.add(row["_index"])
+        hours += float(row.get("duration", 0)) / 3600.0
+    sampled = [r for r in rows if r.get("language") != "liberian_english" or r["_index"] in chosen]
+    print(f"balanced liberian_english to {hours:.2f}h (target {target:.2f}h)", flush=True)
+    return sampled
+
+
+def convert(inp, out, rewrites, balance_to):
     counts = defaultdict(int)
     hours = defaultdict(float)
     skipped = 0
+    rows = sample_balanced_le(load_rows(inp), balance_to)
     with Path(out).open("w", encoding="utf-8") as fout:
-        with Path(inp).open(encoding="utf-8") as fin:
-            for line in fin:
-                row = json.loads(line)
-                results = transform_row(row, rewrites)
-                for result in results:
-                    if not result.get("transcript") or not result.get("words"):
-                        skipped += 1
-                        continue
-                    fout.write(json.dumps(result, ensure_ascii=False) + "\n")
-                    key = f"{result.get('language', 'unknown')}/{result.get('text_style', 'ipa')}"
-                    counts[key] += 1
-                    hours[key] += float(result.get("duration", 0)) / 3600.0
+        for row in rows:
+            results = transform_row(row, rewrites)
+            for result in results:
+                if not result.get("transcript") or not result.get("words"):
+                    skipped += 1
+                    continue
+                fout.write(json.dumps(result, ensure_ascii=False) + "\n")
+                key = f"{result.get('language', 'unknown')}/{result.get('text_style', 'ipa')}"
+                counts[key] += 1
+                hours[key] += float(result.get("duration", 0)) / 3600.0
     print(f"wrote {out}: {sum(counts.values()):,} rows, {sum(hours.values()):.2f} h, {skipped:,} skipped", flush=True)
     for key in sorted(counts):
         print(f"  {key}: {counts[key]:,} rows, {hours[key]:.2f} h", flush=True)
@@ -157,15 +189,16 @@ def main():
     ap.add_argument("--train-in")
     ap.add_argument("--valid-in")
     ap.add_argument("--rewrite-cache", nargs="+", type=Path)
+    ap.add_argument("--balance-le-to", default="kolokwa")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     rewrites = load_rewrite_cache(args.rewrite_cache)
     print(f"loaded {len(rewrites):,} standard-English rewrites", flush=True)
     if args.train_in:
-        convert(args.train_in, args.out / "train.jsonl", rewrites)
+        convert(args.train_in, args.out / "train.jsonl", rewrites, args.balance_le_to)
     if args.valid_in:
-        convert(args.valid_in, args.out / "valid.jsonl", rewrites)
+        convert(args.valid_in, args.out / "valid.jsonl", rewrites, args.balance_le_to)
 
 
 if __name__ == "__main__":
