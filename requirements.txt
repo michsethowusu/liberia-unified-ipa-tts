@@ -1,0 +1,10 @@
+torch
+transformers
+huggingface_hub
+sentencepiece
+soundfile
+pyyaml
+numpy
+phonemize
+pocket-tts
+git+https://github.com/AfriSpeech/africa-g2p.git@a8a53cd2e5c8cadba1a3d73ee2f6cca401e9b190

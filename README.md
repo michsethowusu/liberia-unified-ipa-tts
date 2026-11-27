@@ -1,0 +1,67 @@
+# Liberia Unified IPA TTS
+
+Training and inference code for the unified IPA Pocket TTS model covering Kolokwa, Liberian English, Loma, and Kpelle.
+
+## Inference pipeline
+
+- `kolokwa` text passes through `AfriSpeech/t5-small-english-kolokwa`, then `michsethowusu/kolokwa-g2p-bible`.
+- `liberian_english` text passes through `AfriSpeech/t5-small-english-kolokwa`, then `michsethowusu/kolokwa-g2p-jw`.
+- `loma` text uses `africa-g2p` with code `lom`.
+- `kpelle` text uses `africa-g2p` with code `xpe`.
+- The TTS model consumes IPA only. Language labels are metadata, not conditioning tokens.
+
+## Setup
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Single sample
+
+```bash
+python -m unified_tts.cli \
+  --lang kolokwa \
+  --text "Wetin we coming learn about our brother and sister them" \
+  --voice /path/to/voice.wav \
+  --out out/kolokwa.wav
+```
+
+Use `--no-t5` to disable T5 normalization. Use `--cfg 1.0` for a distilled model.
+
+## Regenerate sample page
+
+```bash
+python -m unified_tts.generate_samples \
+  --manifest /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl \
+  --out /mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference
+```
+
+This writes `audio/*.wav`, `meta.json`, and `index.html`.
+
+## Training
+
+Training configs and scripts are in `training/`.
+
+```bash
+bash training/scripts/train_teacher.sh
+bash training/scripts/train_distill.sh
+```
+
+The teacher config is `training/configs/finetune_unified_ipa.yaml`; the six-layer distillation config is `training/configs/depth_distill_unified_ipa.yaml`.
+
+The training scripts expect the H200 paths used in this project:
+
+- recipe: `/mnt/volume_d2wey28/projects/liberian-english-speech/unified_ipa_tts`
+- data: `/mnt/volume_d2wey28/data/unified_ipa_tts`
+- Africa TTS: `/mnt/volume_d2wey28/projects/africa-tts`
+- Pocket TTS env: `/mnt/volume_d2wey28/projects/pocket-tts-twi/.venv/bin/python`
+
+## Models
+
+- TTS checkpoint used for sample generation: `runs/unified_ipa_teacher/best_model.safetensors`
+- T5: `https://huggingface.co/AfriSpeech/t5-small-english-kolokwa`
+- Kolokwa G2P: `https://huggingface.co/michsethowusu/kolokwa-g2p-bible`
+- Liberian English G2P: `https://huggingface.co/michsethowusu/kolokwa-g2p-jw`
+- Local-language G2P: `https://github.com/AfriSpeech/africa-g2p`
