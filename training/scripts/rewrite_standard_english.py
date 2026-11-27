@@ -22,6 +22,22 @@ Source: {text}
 Standard English:"""
 
 
+def read_key(key_file):
+    key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    if key:
+        return key
+    if not key_file:
+        raise SystemExit("set GEMINI_API_KEY, GOOGLE_API_KEY, or --key-file")
+    for line in Path(key_file).read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" in line:
+            return line.split("=", 1)[1].strip().strip('"').strip("'")
+        return line
+    raise SystemExit(f"no key found in {key_file}")
+
+
 def load_cache(path):
     cache = {}
     if not Path(path).exists():
@@ -95,13 +111,12 @@ def main():
     ap.add_argument("--manifests", nargs="+", required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--model", default=os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"))
+    ap.add_argument("--key-file", type=Path, default=os.environ.get("GEMINI_KEY_FILE"))
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
 
-    key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    if not key:
-        raise SystemExit("set GEMINI_API_KEY or GOOGLE_API_KEY before running this script")
+    key = read_key(args.key_file)
 
     cache = load_cache(args.out)
     rows = collect(args.manifests, cache, args.limit)
