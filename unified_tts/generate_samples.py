@@ -185,7 +185,7 @@ def main():
             texts = pick_texts(voice_by_lang[lang], prompt.get("id"), args.per_lang, rng)
         print(f"{lang}: voice {prompt['id']}, {len(texts)} texts", flush=True)
         for index, row in enumerate(texts):
-            input_text = str(row["text"]).strip()
+            input_text = str(row.get("text", row.get("transcript_orig", ""))).strip()
             wav_path = audio_dir / f"{lang}_{index + 1:02d}.wav"
             result = tts.generate(
                 input_text,
@@ -206,7 +206,7 @@ def main():
                     "voice": str(voice_path),
                     "voice_rel": f"audio/{voice_path.name}",
                     "source": row.get("source"),
-                    "source_id": row.get("source_id"),
+                    "source_id": row.get("source_id", row.get("id")),
                 }
             )
             print(f"  {wav_path.name}: {result['ipa']}", flush=True)
