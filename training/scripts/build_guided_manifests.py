@@ -122,9 +122,6 @@ def transform_row(row, rewrites):
     base["text_style"] = "liberian_english" if source_language == "liberian_english" else "kolokwa"
     base["condition_prefix"] = condition_prefix("kolokwa", base["text_style"])
 
-    if source_language != "liberian_english":
-        return [base]
-
     rewrite = rewrites.get(str(row.get("id") or ""))
     if not rewrite:
         return [base]

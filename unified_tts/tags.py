@@ -9,7 +9,7 @@ CONDITION_PREFIXES = {
 STYLE_PREFIXES = {
     "kolokwa": "<lang:kolokwa>",
     "liberian_english": "<lang:liberian_english>",
-    "standard_english": "<lang:standard_english>",
+    "standard_english": "<lang:kolokwa>",
 }
 
 

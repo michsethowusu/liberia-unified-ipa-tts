@@ -92,13 +92,13 @@ def load_rows(path, balance_to):
     return sample_balanced_le(rows, balance_to)
 
 
-def collect(manifests, cache, limit, key_index, key_count, balance_to):
+def collect(manifests, cache, limit, key_index, key_count, balance_to, languages):
     rows = []
     seen = set()
     total = 0
     for manifest in manifests:
         for row in load_rows(manifest, balance_to):
-            if row.get("language") != "liberian_english":
+            if row.get("language") not in languages:
                 continue
             row_id = str(row.get("id") or "")
             text = str(row.get("transcript_orig") or row.get("transcript") or "").strip()
@@ -143,6 +143,7 @@ def main():
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--backend", choices=["gemini", "gemini-live"], default="gemini-live")
     ap.add_argument("--balance-le-to", default="kolokwa")
+    ap.add_argument("--languages", nargs="+", default=["liberian_english", "kolokwa"])
     ap.add_argument("--model")
     ap.add_argument("--key-file", type=Path, default=os.environ.get("GEMINI_KEY_FILE"))
     ap.add_argument("--key-index", type=int, default=0)
@@ -162,7 +163,15 @@ def main():
     )
 
     cache = load_cache([args.out])
-    rows = collect(args.manifests, cache, args.limit, args.key_index, args.key_count, args.balance_le_to)
+    rows = collect(
+        args.manifests,
+        cache,
+        args.limit,
+        args.key_index,
+        args.key_count,
+        args.balance_le_to,
+        set(args.languages),
+    )
     print(
         f"rewriting {len(rows):,} rows with {args.backend}/{model} key {args.key_index + 1}/{len(keys)}; "
         f"{len(cache):,} cached",
