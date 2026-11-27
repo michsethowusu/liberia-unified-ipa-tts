@@ -24,7 +24,7 @@ pip install -r requirements.txt
 Liberian English rows are relabeled `kolokwa` and duplicated: one row keeps the Liberian English transcript, and one row uses a Gemini-rewritten standard English transcript. Loma and Kpelle keep `africa-g2p` IPA. A fresh tokenizer is trained over this mixed target field, the text embedding is reset, and all other weights are seeded from the previous best EMA checkpoint.
 
 ```bash
-export GEMINI_API_KEY=...  # or pass --key-file /secure/path/gemini.key
+export GEMINI_API_KEY=...  # or pass --key-file with one key per line
 python training/scripts/rewrite_standard_english.py \
   --manifests /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/train.jsonl /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl \
   --out /mnt/volume_d2wey28/data/unified_guided_tts/rewrites/gemini_standard_english.jsonl
