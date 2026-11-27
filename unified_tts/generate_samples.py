@@ -17,6 +17,27 @@ def load_jsonl(path):
     return [json.loads(line) for line in Path(path).open(encoding="utf-8")]
 
 
+def load_prompts(path, langs):
+    prompts = []
+    for line in Path(path).open(encoding="utf-8"):
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        lang = str(row.get("language", row.get("lang", ""))).strip().lower()
+        text = str(row.get("text", row.get("transcript_orig", ""))).strip()
+        if lang not in langs or not text:
+            continue
+        prompts.append(
+            {
+                "language": lang,
+                "text": text,
+                "source": row.get("source", "prompt_file"),
+                "source_id": row.get("id", f"{lang}:{len(prompts) + 1:02d}"),
+            }
+        )
+    return prompts
+
+
 def pick_prompt(rows, rng):
     pool = [
         row
@@ -94,6 +115,7 @@ def write_html(out_dir, metadata):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", type=Path, default=Path("/mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl"))
+    parser.add_argument("--prompts", type=Path, help="JSONL with language and text fields for out-of-domain samples")
     parser.add_argument("--out", type=Path, default=Path("/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference"))
     parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
     parser.add_argument("--tokenizer", type=Path, default=DEFAULT_TOKENIZER)
@@ -118,10 +140,26 @@ def main():
         use_t5=not args.no_t5,
     )
 
-    rows = [row for row in load_jsonl(args.manifest) if row.get("language") in LANGS]
-    by_lang = defaultdict(list)
-    for row in rows:
-        by_lang[row["language"]].append(row)
+    manifest_rows = [row for row in load_jsonl(args.manifest) if row.get("language") in LANGS]
+    voice_by_lang = defaultdict(list)
+    for row in manifest_rows:
+        voice_by_lang[row["language"]].append(row)
+
+    if args.prompts:
+        sample_rows = load_prompts(args.prompts, LANGS)
+    else:
+        sample_rows = [
+            {
+                "language": row["language"],
+                "text": row["transcript_orig"],
+                "source": row.get("source"),
+                "source_id": row.get("id"),
+            }
+            for row in manifest_rows
+        ]
+    sample_by_lang = defaultdict(list)
+    for row in sample_rows:
+        sample_by_lang[row["language"]].append(row)
 
     rng = random.Random(args.seed)
     metadata = {
@@ -129,22 +167,26 @@ def main():
         "cfg": args.cfg,
         "temperature": args.temperature,
         "t5": not args.no_t5,
+        "prompts": str(args.prompts) if args.prompts else None,
         "samples": [],
     }
 
     for lang in LANGS:
-        lang_rows = by_lang[lang]
-        prompt = pick_prompt(lang_rows, rng)
+        prompt = pick_prompt(voice_by_lang[lang], rng)
         voice_audio, voice_sr = sf.read(prompt["path"], dtype="float32", always_2d=True)
         voice_audio = voice_audio[: int(4.0 * voice_sr)]
         voice_path = audio_dir / f"{lang}_voice.wav"
         sf.write(voice_path, voice_audio, voice_sr)
-        texts = pick_texts(lang_rows, prompt.get("id"), args.per_lang, rng)
+        if args.prompts:
+            texts = sample_by_lang[lang][: args.per_lang]
+        else:
+            texts = pick_texts(voice_by_lang[lang], prompt.get("id"), args.per_lang, rng)
         print(f"{lang}: voice {prompt['id']}, {len(texts)} texts", flush=True)
         for index, row in enumerate(texts):
+            input_text = str(row["text"]).strip()
             wav_path = audio_dir / f"{lang}_{index + 1:02d}.wav"
             result = tts.generate(
-                row["transcript_orig"],
+                input_text,
                 lang,
                 voice_path,
                 out=wav_path,
@@ -153,7 +195,7 @@ def main():
             metadata["samples"].append(
                 {
                     "language": lang,
-                    "input_text": row["transcript_orig"],
+                    "input_text": input_text,
                     "text": result["text"],
                     "translated_text": result["translated_text"],
                     "ipa": result["ipa"],
@@ -162,7 +204,7 @@ def main():
                     "voice": str(voice_path),
                     "voice_rel": f"audio/{voice_path.name}",
                     "source": row.get("source"),
-                    "source_id": row.get("id"),
+                    "source_id": row.get("source_id"),
                 }
             )
             print(f"  {wav_path.name}: {result['ipa']}", flush=True)

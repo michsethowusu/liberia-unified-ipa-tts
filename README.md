@@ -40,6 +40,22 @@ python -m unified_tts.generate_samples \
 
 This writes `audio/*.wav`, `meta.json`, and `index.html`.
 
+## Out-of-domain samples
+
+Pass `--prompts` with a JSONL file of `{ "language": "kpelle", "text": "..." }` rows. Voice prompts still come from the manifest, but the spoken text comes from the prompt file.
+
+```bash
+python -m unified_tts.generate_samples \
+  --prompts prompts.jsonl \
+  --out /mnt/volume_d2wey28/data/unified_ipa_tts/samples/out_of_domain
+```
+
+Useful text sources:
+
+- Kpelle: `https://huggingface.co/datasets/IARG-UF/English-Kpelle-Corpus`
+- Kpelle UDHR: `http://efele.net/udhr/d/udhr_gkp.html` (Guinean Kpelle; verify orthography against Liberian Kpelle)
+- Loma and Kpelle: `https://github.com/AfriSpeech/africa-corpus-builder` with language codes `lom` and `xpe`
+
 ## Training
 
 Training configs and scripts are in `training/`.
