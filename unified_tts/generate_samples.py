@@ -77,12 +77,13 @@ def write_html(out_dir, metadata):
         parts.append(f"<section><h2>{html.escape(lang)}</h2>")
         parts.append(f"<div class=\"voice\"><strong>Voice prompt</strong><audio controls preload=\"none\" src=\"{html.escape(samples[0]['voice_rel'])}\"></audio></div>")
         for sample in samples:
+            input_text = str(sample.get("input_text", sample["text"]))
             parts.append("<div class=\"item\">")
             parts.append(f"<audio controls preload=\"none\" src=\"{html.escape(sample['wav_rel'])}\"></audio>")
-            parts.append(f"<div><strong>Input:</strong> {html.escape(sample['text'])}</div>")
-            if sample.get("translated_text") and sample["translated_text"] != sample["text"]:
-                parts.append(f"<div><strong>T5:</strong> {html.escape(sample['translated_text'])}</div>")
-            parts.append(f"<code>{html.escape(sample['ipa'])}</code>")
+            parts.append(f"<div><strong>Input grapheme:</strong> {html.escape(input_text)}</div>")
+            if sample.get("translated_text"):
+                parts.append(f"<div><strong>T5 output:</strong> {html.escape(sample['text'])}</div>")
+            parts.append(f"<div><strong>IPA:</strong> <code>{html.escape(sample['ipa'])}</code></div>")
             parts.append(f"<div class=\"meta\">source: {html.escape(str(sample.get('source', '')))} · {html.escape(str(sample.get('source_id', '')))}</div>")
             parts.append("</div>")
         parts.append("</section>")
@@ -152,6 +153,7 @@ def main():
             metadata["samples"].append(
                 {
                     "language": lang,
+                    "input_text": row["transcript_orig"],
                     "text": result["text"],
                     "translated_text": result["translated_text"],
                     "ipa": result["ipa"],
