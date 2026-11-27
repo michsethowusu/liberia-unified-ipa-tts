@@ -1,0 +1,152 @@
+{
+  "checkpoint": "/mnt/volume_d2wey28/projects/liberian-english-speech/unified_ipa_tts/runs/unified_ipa_teacher/best_model.safetensors",
+  "cfg": 2.0,
+  "temperature": 0.3,
+  "t5": true,
+  "samples": [
+    {
+      "language": "kolokwa",
+      "text": "Na literary play that for Grandpa candle.",
+      "translated_text": "Na literary play that for Grandpa candle.",
+      "ipa": "na lt ple ðæt fɔɹ npʰa kʰand.",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kolokwa_01.wav",
+      "wav_rel": "audio/kolokwa_01.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kolokwa_voice.wav",
+      "voice_rel": "audio/kolokwa_voice.wav",
+      "source": "kolokwa_movies",
+      "source_id": "kolokwa_movies:LIR_MOV_qaUQt_gwWwQ_0346"
+    },
+    {
+      "language": "kolokwa",
+      "text": "But why you just change the spelling of the word When we come out you change it When we come on the other side you change it again",
+      "translated_text": "But why you just change the spelling of the word When we come out you change it When we come on the other side you change it again",
+      "ipa": "pʌt waɪ ju d͡ʒɛ ʃeɪ̃ndʒ ðə sfɪlɪ̃ ʌv ðə wɔ wɛ̃n wi kʰʌm aʊt ju ʃeɪ̃ndʒ e wɛ̃n wi kʰʌm on ðə ʌðə˞ sa ju ʃeɪ̃ndʒ e əɡɛ̃n",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kolokwa_02.wav",
+      "wav_rel": "audio/kolokwa_02.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kolokwa_voice.wav",
+      "voice_rel": "audio/kolokwa_voice.wav",
+      "source": "kolokwa_movies",
+      "source_id": "kolokwa_movies:LIR_MOV_B9M7RmhVmEc_0488"
+    },
+    {
+      "language": "kolokwa",
+      "text": "And the Justice Ministry, they saying, no, we get the evidence.",
+      "translated_text": "And the Justice Ministry, they saying, no, we get the evidence.",
+      "ipa": "ənd ðə tʃʌstəs mɪ̃nəstɹi, ðeɪ seɪɪ̃ŋ, n, wi kɛt ðə ivən.",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kolokwa_03.wav",
+      "wav_rel": "audio/kolokwa_03.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kolokwa_voice.wav",
+      "voice_rel": "audio/kolokwa_voice.wav",
+      "source": "kolokwa_movies",
+      "source_id": "kolokwa_movies:LIR_MOV_NJIGg6fnHcA_0290"
+    },
+    {
+      "language": "liberian_english",
+      "text": "you know, making decisions about the country monetary policy.",
+      "translated_text": "you know, making decisions about the country monetary policy.",
+      "ipa": "ju noʊ, meɪkɪ̃ŋ tɪsɪʒənz əbaʊt ðə kʰʌntɹi mʌnɛtɛɹi pʰəlis.",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/liberian_english_01.wav",
+      "wav_rel": "audio/liberian_english_01.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/liberian_english_voice.wav",
+      "voice_rel": "audio/liberian_english_voice.wav",
+      "source": "liberian_english",
+      "source_id": "liberian_english:LIR_MOV_l-BIJHEDDfQ_0100"
+    },
+    {
+      "language": "liberian_english",
+      "text": "Let talk about something else that can make our faith strong that personal study Susan say it can help her when she make schedule to study",
+      "translated_text": "Let talk about something else that can make our faith strong that personal study Susan say it can help her when she make schedule to study",
+      "ipa": "lɛt tʰɔk əbaʊt sʌmθɪ̃ŋ ɛls ðæt kʰæ̃n me aʊə˞ fɪt stɹɔ̃ŋ ðæt pʰə˞sənəl stɛdi suzən sɛ ɪt kʰæ̃n hɛlp hɔ wɛ̃n ʃi me skɛdʒu tʰu stɛdi",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/liberian_english_02.wav",
+      "wav_rel": "audio/liberian_english_02.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/liberian_english_voice.wav",
+      "voice_rel": "audio/liberian_english_voice.wav",
+      "source": "kolokwa_jw_formal",
+      "source_id": "kolokwa_jw:w_202304_2023366_p024_s00"
+    },
+    {
+      "language": "liberian_english",
+      "text": "as a contrary to a commodity those new seats that being thrown together",
+      "translated_text": "as a contrary to a commodity those new seats that being thrown together",
+      "ipa": "æz ə kʰɑ̃ntɹɛɹi tʰu ə kʰəmədəti ðoʊz nu sit ðæt piɪ̃ŋ tʃə˞sijuhævtʰʃo tʰəɡɛðə˞",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/liberian_english_03.wav",
+      "wav_rel": "audio/liberian_english_03.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/liberian_english_voice.wav",
+      "voice_rel": "audio/liberian_english_voice.wav",
+      "source": "liberian_english",
+      "source_id": "liberian_english:LIR_MOV_l-BIJHEDDfQ_0413"
+    },
+    {
+      "language": "loma",
+      "text": "E boni ga nui nii e yee ɓadoga ba, na ɣa ga Ziizɛ ɔ va e nu ɓuse wũ-maa-wo faa yowũ ɓɔga saa ya.",
+      "translated_text": null,
+      "ipa": "e boni ɡa nui nii e jee ɓadoɡa ba, na ɣa ɡa ziizɛ ɔ va e nu ɓuse wũ-maa-wo faa jowũ ɓɔɡa saa ja.",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/loma_01.wav",
+      "wav_rel": "audio/loma_01.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/loma_voice.wav",
+      "voice_rel": "audio/loma_voice.wav",
+      "source": "loma",
+      "source_id": "loma:w_202604_2026365_p074_s00"
+    },
+    {
+      "language": "loma",
+      "text": "Faa ɓigii ɣa ga yiɛ Jehova ʋeli ga e ɣigii",
+      "translated_text": null,
+      "ipa": "faa ɓiɡii ɣa ɡa jiɛ d͡ʒehova ʊeli ɡa e ɣiɡii",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/loma_02.wav",
+      "wav_rel": "audio/loma_02.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/loma_voice.wav",
+      "voice_rel": "audio/loma_voice.wav",
+      "source": "loma",
+      "source_id": "loma:mwb_202509_202025329_p009_s00"
+    },
+    {
+      "language": "loma",
+      "text": "Numaa ɣaa-zaɣa-kɛ ga te ɓɔ e va. Yɛpɛ kuuwu wũ-tuo nui ta wɔ, ɔɔ ya ziɛ-pului ta e laila e vile velei va e ɣi-gaa-ziɛzu la.",
+      "translated_text": null,
+      "ipa": "numaa ɣaa-zaɣa-kɛ ɡa te ɓɔ e va. jɛpɛ kuuwu wũ-tuo nui ta wɔ, ɔɔ ja ziɛ-pului ta e laila e vile velei va e ɣi-ɡaa-ziɛzu la.",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/loma_03.wav",
+      "wav_rel": "audio/loma_03.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/loma_voice.wav",
+      "voice_rel": "audio/loma_voice.wav",
+      "source": "loma",
+      "source_id": "loma:w_202604_2026367_p024_s00"
+    },
+    {
+      "language": "kpelle",
+      "text": "Da pɔri kpiŋ kpɔnii ma a gɛɛ e ŋɛi kɛ mɛni-ŋuŋ ta maa-kɔriɛ ma a tãi gaa nii la kɔlɔ-pɛrɛ mui nyii pai kpɔnii ma a gɛɛ e tii lɛlɛɛ sɔlɔ ɓo kpaa e gbiŋ kpɛtɛ kɔlɔ-pɛrɛ takpɛni mɛni ma.",
+      "translated_text": null,
+      "ipa": "da pɔri k͡piŋ k͡pɔnii ma a ɡɛɛ e ŋɛi kɛ mɛni-ŋuŋ ta maa-kɔriɛ ma a tãi ɡaa nii la kɔlɔ-pɛrɛ mui ɲii pai k͡pɔnii ma a ɡɛɛ e tii lɛlɛɛ sɔlɔ ɓo k͡paa e ɡ͡biŋ k͡pɛtɛ kɔlɔ-pɛrɛ tak͡pɛni mɛni ma.",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kpelle_01.wav",
+      "wav_rel": "audio/kpelle_01.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kpelle_voice.wav",
+      "voice_rel": "audio/kpelle_voice.wav",
+      "source": "kpelle",
+      "source_id": "kpelle:w_202605_2026402_p012_s02"
+    },
+    {
+      "language": "kpelle",
+      "text": "Le mɛni ɓe maa nɛ̃ɛi ku tãi tɛɛ la kukpiŋ pɔ a gɛɛ kulii ŋaa e yeŋ? (Ya pɔri ŋɔnɔ votoo-ŋai kaai.)",
+      "translated_text": null,
+      "ipa": "le mɛni ɓe maa nɛ̃ɛi ku tãi tɛɛ la kuk͡piŋ pɔ a ɡɛɛ kulii ŋaa e jeŋ? (ja pɔri ŋɔnɔ votoo-ŋai kaai.)",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kpelle_02.wav",
+      "wav_rel": "audio/kpelle_02.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kpelle_voice.wav",
+      "voice_rel": "audio/kpelle_voice.wav",
+      "source": "kpelle",
+      "source_id": "kpelle:w_202502_2025292_p060_s00"
+    },
+    {
+      "language": "kpelle",
+      "text": "Nene-polu Naa-kaa Viloi: (Mini five) Ka lono e pilaŋ ma. Viloi ŋi lɛ.",
+      "translated_text": null,
+      "ipa": "nene-polu naa-kaa viloi: (mini five) ka lono e pilaŋ ma. viloi ŋi lɛ.",
+      "wav": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kpelle_03.wav",
+      "wav_rel": "audio/kpelle_03.wav",
+      "voice": "/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference/audio/kpelle_voice.wav",
+      "voice_rel": "audio/kpelle_voice.wav",
+      "source": "kpelle",
+      "source_id": "kpelle:mwb_202303_202023084_p014_s00"
+    }
+  ]
+}
