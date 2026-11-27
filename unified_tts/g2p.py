@@ -30,10 +30,16 @@ def normalize_lang(lang):
 
 @lru_cache(maxsize=None)
 def load_phonemizer(repo_id):
+    import torch
     from phonemize import Phonemizer
 
     checkpoint = hf_hub_download(repo_id=repo_id, filename="best_model.pt")
-    return Phonemizer.from_checkpoint(checkpoint)
+    original_load = torch.load
+    try:
+        torch.load = lambda *args, **kwargs: original_load(*args, weights_only=False, **kwargs)
+        return Phonemizer.from_checkpoint(checkpoint)
+    finally:
+        torch.load = original_load
 
 
 def deep_phonemizer(text, lang):
