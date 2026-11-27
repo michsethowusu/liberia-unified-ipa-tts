@@ -1,8 +1,12 @@
 import argparse
 import json
 import random
+import sys
 from collections import defaultdict
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from unified_tts.tags import condition_prefix
 
 TEXT_LANGS = {"kolokwa", "liberian_english"}
 
@@ -108,6 +112,7 @@ def transform_row(row, rewrites):
     row = {key: value for key, value in row.items() if key != "_index"}
     source_language = row.get("language", "")
     if source_language not in TEXT_LANGS:
+        row["condition_prefix"] = condition_prefix(source_language)
         return [row]
 
     base = text_row(row)
@@ -115,6 +120,7 @@ def transform_row(row, rewrites):
     base["source_language"] = source_language
     base["source_transcript"] = str(row.get("transcript_orig") or row.get("transcript") or "")
     base["text_style"] = "liberian_english" if source_language == "liberian_english" else "kolokwa"
+    base["condition_prefix"] = condition_prefix("kolokwa", base["text_style"])
 
     if source_language != "liberian_english":
         return [base]
@@ -129,6 +135,7 @@ def transform_row(row, rewrites):
     standard["transcript_orig"] = standard["transcript"]
     standard["words"] = align_rewrite(standard["transcript"], row.get("words") or [])
     standard["text_style"] = "standard_english"
+    standard["condition_prefix"] = condition_prefix("kolokwa", "standard_english")
     return [base, standard]
 
 

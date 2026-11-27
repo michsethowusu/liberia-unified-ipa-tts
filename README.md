@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 ## Guided finetune data
 
-Liberian English rows are relabeled `kolokwa`, subsampled to match the Kolokwa hours, and duplicated: one row keeps the Liberian English transcript, and one row uses a Gemini-rewritten standard English transcript. Loma and Kpelle keep `africa-g2p` IPA. A fresh tokenizer is trained over this mixed target field, the text embedding is reset, and all other weights are seeded from the previous best EMA checkpoint.
+Liberian English rows are relabeled `kolokwa`, subsampled to match the Kolokwa hours, and duplicated: one row keeps the Liberian English transcript, and one row uses a Gemini-rewritten standard English transcript. Loma and Kpelle keep `africa-g2p` IPA. Language/style conditioning is a leading reserved token (`<lang:kolokwa>`, `<lang:liberian_english>`, `<lang:standard_english>`, `<lang:loma>`, `<lang:kpelle>`) stored as `condition_prefix` in each manifest row; the H200 loader prepends it after word-cuts, and inference passes the same token. A fresh tokenizer is trained with those tokens reserved, the text embedding is reset, and all other weights are seeded from the previous best EMA checkpoint.
 
 ```bash
 pip install "afrispeech-synth[gemini] @ git+https://github.com/michsethowusu/gemini-datagen.git"

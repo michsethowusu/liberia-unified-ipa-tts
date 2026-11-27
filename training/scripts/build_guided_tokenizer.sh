@@ -12,7 +12,8 @@ cd "$AFRICA_TTS"
   --train "$DATA/manifests/train.jsonl" \
   --valid "$DATA/manifests/valid.jsonl" \
   --vocab 4000 \
-  --lines 2000000
+  --lines 2000000 \
+  --user-defined-symbols '<lang:kolokwa>' '<lang:liberian_english>' '<lang:standard_english>' '<lang:loma>' '<lang:kpelle>'
 "$PY" -m training.scripts.convert_tokenizer "$RECIPE/tokenizer/ipa_sp4000.model" \
   --out "$RECIPE/tokenizer/ipa_sp4000.json" \
   --texts "$DATA/manifests/valid.jsonl"

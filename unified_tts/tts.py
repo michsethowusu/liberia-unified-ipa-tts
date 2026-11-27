@@ -7,6 +7,7 @@ from pocket_tts import TTSModel
 
 from .g2p import TEXT_LANGS, normalize_lang, normalize_text, to_ipa
 from .guidance import GuidedTTSModel
+from .tags import condition_prefix
 
 
 class UnifiedTTS:
@@ -43,7 +44,7 @@ class UnifiedTTS:
             model = GuidedTTSModel.wrap(model, cfg)
         return cls(model, device, cfg, temperature)
 
-    def phonemize(self, text, lang):
+    def phonemize(self, text, lang, style=None):
         lang = normalize_lang(lang)
         if lang in TEXT_LANGS:
             model_text = normalize_text(text)
@@ -51,8 +52,10 @@ class UnifiedTTS:
         else:
             model_text = to_ipa(text, lang)
             frontend = "africa-g2p"
+        prefix = condition_prefix(lang, style)
         return {
-            "text": model_text,
+            "text": f"{prefix} {model_text}",
+            "condition_prefix": prefix,
             "translated_text": None,
             "frontend": frontend,
         }
@@ -63,8 +66,8 @@ class UnifiedTTS:
             self._states[key] = self.model.get_state_for_audio_prompt(voice)
         return self._states[key]
 
-    def generate(self, text, lang, voice, out=None, seed=None):
-        model_input = self.phonemize(text, lang)
+    def generate(self, text, lang, voice, out=None, seed=None, style=None):
+        model_input = self.phonemize(text, lang, style)
         if seed is not None:
             torch.manual_seed(seed)
         audio = self.model.generate_audio(self._state(voice), model_input["text"], max_tokens=250)

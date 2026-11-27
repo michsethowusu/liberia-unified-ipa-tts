@@ -14,6 +14,7 @@ def build_parser():
     parser = argparse.ArgumentParser(description="Unified IPA TTS inference")
     parser.add_argument("--text")
     parser.add_argument("--lang")
+    parser.add_argument("--style", help="kolokwa, liberian_english, standard_english, loma, or kpelle")
     parser.add_argument("--voice")
     parser.add_argument("--out", type=Path)
     parser.add_argument("--batch", type=Path, help="JSON list of {lang,text,voice,out} objects")
@@ -56,6 +57,7 @@ def main():
                 item["voice"],
                 out=out,
                 seed=args.seed + index,
+                style=item.get("style", item.get("text_style")),
             )
             print(json.dumps({k: v for k, v in result.items() if k != "audio"}, ensure_ascii=False), flush=True)
         return
@@ -69,6 +71,7 @@ def main():
         args.voice,
         out=args.out,
         seed=args.seed,
+        style=args.style,
     )
     print(json.dumps({k: v for k, v in result.items() if k != "audio"}, ensure_ascii=False))
 

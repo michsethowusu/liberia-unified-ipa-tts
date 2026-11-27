@@ -31,6 +31,7 @@ def load_prompts(path, langs):
             {
                 "language": lang,
                 "text": text,
+                "style": row.get("text_style", row.get("style")),
                 "source": row.get("source", "prompt_file"),
                 "source_id": row.get("id", f"{lang}:{len(prompts) + 1:02d}"),
             }
@@ -150,6 +151,7 @@ def main():
             {
                 "language": row["language"],
                 "text": row["transcript_orig"],
+                "style": row.get("text_style", row.get("style")),
                 "source": row.get("source"),
                 "source_id": row.get("id"),
             }
@@ -189,12 +191,14 @@ def main():
                 voice_path,
                 out=wav_path,
                 seed=args.seed + index + LANGS.index(lang) * 1000,
+                style=row.get("style"),
             )
             metadata["samples"].append(
                 {
                     "language": lang,
                     "input_text": input_text,
                     "text": result["text"],
+                    "condition_prefix": result["condition_prefix"],
                     "translated_text": result["translated_text"],
                     "frontend": result["frontend"],
                     "wav": str(wav_path),
