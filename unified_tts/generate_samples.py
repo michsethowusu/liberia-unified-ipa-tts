@@ -86,7 +86,7 @@ def write_html(out_dir, metadata):
         ".meta{color:#666;font-size:.85rem}.voice{background:#f7f7f7;padding:.75rem;border-radius:8px;margin-bottom:.75rem}",
         ".sub{color:#555;margin-bottom:2rem}</style></head><body>",
         "<h1>Unified IPA TTS Samples</h1>",
-        f"<div class=\"sub\">Frontend: africa-g2p · Kolokwa T5: {'on' if metadata.get('t5') else 'off'} · Checkpoint: {html.escape(metadata['checkpoint'])}</div>",
+        f"<div class=\"sub\">Frontend: transcript for Kolokwa/Liberian English, africa-g2p for Loma/Kpelle · Checkpoint: {html.escape(metadata['checkpoint'])}</div>",
     ]
     by_lang = defaultdict(list)
     for sample in metadata["samples"]:
@@ -102,9 +102,9 @@ def write_html(out_dir, metadata):
             parts.append("<div class=\"item\">")
             parts.append(f"<audio controls preload=\"none\" src=\"{html.escape(sample['wav_rel'])}\"></audio>")
             parts.append(f"<div><strong>Input grapheme:</strong> {html.escape(input_text)}</div>")
-            if sample.get("translated_text"):
-                parts.append(f"<div><strong>T5 output:</strong> {html.escape(sample['text'])}</div>")
-            parts.append(f"<div><strong>IPA:</strong> <code>{html.escape(sample['ipa'])}</code></div>")
+            label = "Model text" if sample.get("frontend") == "transcript" else "IPA"
+            model_text = str(sample.get("text", sample.get("ipa", "")))
+            parts.append(f"<div><strong>{label}:</strong> <code>{html.escape(model_text)}</code></div>")
             parts.append(f"<div class=\"meta\">source: {html.escape(str(sample.get('source', '')))} · {html.escape(str(sample.get('source_id', '')))}</div>")
             parts.append("</div>")
         parts.append("</section>")
@@ -114,7 +114,7 @@ def write_html(out_dir, metadata):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--manifest", type=Path, default=Path("/mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl"))
+    parser.add_argument("--manifest", type=Path, default=Path("/mnt/volume_d2wey28/data/unified_guided_tts/manifests/valid.jsonl"))
     parser.add_argument("--prompts", type=Path, help="JSONL with language and text fields for out-of-domain samples")
     parser.add_argument("--out", type=Path, default=Path("/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference"))
     parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
@@ -124,8 +124,6 @@ def main():
     parser.add_argument("--cfg", type=float, default=2.0)
     parser.add_argument("--temperature", type=float, default=0.3)
     parser.add_argument("--seed", type=int, default=2026)
-    parser.add_argument("--t5", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--no-t5", action="store_true", help="Disable Kolokwa T5 normalization")
     args = parser.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)
@@ -138,7 +136,6 @@ def main():
         base_config=args.base_config,
         cfg=args.cfg,
         temperature=args.temperature,
-        use_t5=not args.no_t5,
     )
 
     manifest_rows = [row for row in load_jsonl(args.manifest) if row.get("language") in LANGS]
@@ -167,8 +164,7 @@ def main():
         "checkpoint": str(args.checkpoint),
         "cfg": args.cfg,
         "temperature": args.temperature,
-        "t5": not args.no_t5,
-        "frontend": "africa-g2p",
+        "frontend": "transcript/africa-g2p",
         "prompts": str(args.prompts) if args.prompts else None,
         "samples": [],
     }
@@ -200,7 +196,7 @@ def main():
                     "input_text": input_text,
                     "text": result["text"],
                     "translated_text": result["translated_text"],
-                    "ipa": result["ipa"],
+                    "frontend": result["frontend"],
                     "wav": str(wav_path),
                     "wav_rel": f"audio/{wav_path.name}",
                     "voice": str(voice_path),
@@ -209,7 +205,7 @@ def main():
                     "source_id": row.get("source_id", row.get("id")),
                 }
             )
-            print(f"  {wav_path.name}: {result['ipa']}", flush=True)
+            print(f"  {wav_path.name}: {result['text']}", flush=True)
 
     (args.out / "meta.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
     write_html(args.out, metadata)

@@ -1,16 +1,15 @@
-# Liberia Unified IPA TTS
+# Liberia Unified TTS
 
-Training and inference code for the unified IPA Pocket TTS model covering Kolokwa, Liberian English, Loma, and Kpelle.
+Training and inference code for a unified Pocket TTS model covering Kolokwa/Liberian English text, Loma IPA, and Kpelle IPA.
 
 ## Inference pipeline
 
-- All four languages use `africa-g2p` as the text frontend before the TTS model.
-- `kolokwa`: text -> `AfriSpeech/t5-small-english-kolokwa` -> `africa-g2p` code `eng` -> TTS model.
-- `liberian_english`: text -> `africa-g2p` code `eng` -> TTS model.
+- No T5 model is used at training or inference time.
+- `kolokwa` accepts Liberian English transcript text or standard English text directly -> TTS model.
+- `liberian_english` is folded into the `kolokwa` training bucket.
 - `loma`: text -> `africa-g2p` code `lom` -> TTS model.
 - `kpelle`: text -> `africa-g2p` code `xpe` -> TTS model.
-- Use `--no-t5` to disable Kolokwa T5 normalization.
-- The TTS model consumes IPA only. Language labels are metadata, not conditioning tokens.
+- Language labels are metadata, not conditioning tokens.
 
 ## Setup
 
@@ -18,6 +17,27 @@ Training and inference code for the unified IPA Pocket TTS model covering Kolokw
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+```
+
+## Guided finetune data
+
+Liberian English rows are relabeled `kolokwa` and duplicated: one row keeps the Liberian English transcript, and one row uses a Gemini-rewritten standard English transcript. Loma and Kpelle keep `africa-g2p` IPA. A fresh tokenizer is trained over this mixed target field, the text embedding is reset, and all other weights are seeded from the previous best EMA checkpoint.
+
+```bash
+export GEMINI_API_KEY=...
+python training/scripts/rewrite_standard_english.py \
+  --manifests /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/train.jsonl /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl \
+  --out /mnt/volume_d2wey28/data/unified_guided_tts/rewrites/gemini_standard_english.jsonl
+
+python training/scripts/build_guided_manifests.py \
+  --train-in /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/train.jsonl \
+  --valid-in /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl \
+  --rewrite-cache /mnt/volume_d2wey28/data/unified_guided_tts/rewrites/gemini_standard_english.jsonl \
+  --out /mnt/volume_d2wey28/data/unified_guided_tts/manifests
+
+bash training/scripts/build_guided_tokenizer.sh
+bash training/scripts/seed_guided.sh
+bash training/scripts/train_guided.sh
 ```
 
 ## Single sample
@@ -30,13 +50,13 @@ python -m unified_tts.cli \
   --out out/kolokwa.wav
 ```
 
-Use `--no-t5` to disable Kolokwa T5 normalization. Use `--cfg 1.0` for a distilled model.
+Use `--cfg 1.0` for a distilled model.
 
 ## Regenerate sample page
 
 ```bash
 python -m unified_tts.generate_samples \
-  --manifest /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl \
+  --manifest /mnt/volume_d2wey28/data/unified_guided_tts/manifests/valid.jsonl \
   --out /mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference
 ```
 

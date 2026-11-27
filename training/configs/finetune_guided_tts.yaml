@@ -1,0 +1,50 @@
+model_config: /mnt/volume_d2wey28/projects/pocket-tts-twi/pocket_tts/config/english_2026-04_24l.yaml
+model_overrides:
+  flow_lm.lookup_table.tokenizer: tokenizers
+  flow_lm.lookup_table.tokenizer_path: /mnt/volume_d2wey28/projects/liberian-english-speech/unified_guided_tts/tokenizer/ipa_sp4000.json
+  flow_lm.lookup_table.n_bins: 4000
+start_from_pretrained: true
+reset_text_embedding: true
+
+data:
+  train_jsonl: /mnt/volume_d2wey28/data/unified_guided_tts/manifests/train.jsonl
+  valid_jsonl: /mnt/volume_d2wey28/data/unified_guided_tts/manifests/valid.jsonl
+  max_duration_sec: 30.0
+  max_voice_prompt_sec: 5.0
+  precompute: true
+  loader_procs: 6
+
+flow:
+  type: lsd
+  kwargs: {}
+
+flow_batch_multiplier: 4
+eos_loss_weight: 0.1
+text_dropout: 0.2
+voice_dropout: 0.2
+
+optim:
+  lr: 1e-4
+  schedule: constant
+  warmup_steps: 500
+
+run_dir: /mnt/volume_d2wey28/projects/liberian-english-speech/unified_guided_tts/runs/guided_teacher
+batch_size: 64
+grad_accum_steps: 1
+max_steps: 30000
+stats_ema_steps: 1000
+ema_decay: 0.999
+log_freq: 50
+valid_freq: 1000
+num_valid_batches: 50
+keep_best_metric: loss
+early_stop_patience: 20
+ckpt_freq: 5000
+num_ckpt_keep: 10
+sample_cfg_coef: 2.0
+sample_freq: 5000
+sample_sentences:
+  - "Your people who have died will come back to life!"
+  - "Your People Who na Die Will Come Back to Life!"
+  - "tɛnɛ paɡɔ ɣa wɔnɔ su ja"
+  - "nua tamaa daa ɡaa a ɡɛɛ"

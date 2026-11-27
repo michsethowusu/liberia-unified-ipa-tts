@@ -1,11 +1,10 @@
+TEXT_LANGS = {"kolokwa", "liberian_english"}
 AFRICA_G2P_CODES = {
-    "kolokwa": "eng",
-    "liberian_english": "eng",
     "loma": "lom",
     "kpelle": "xpe",
 }
-T5_LANGS = {"kolokwa"}
-SUPPORTED_LANGS = set(AFRICA_G2P_CODES)
+T5_LANGS = set()
+SUPPORTED_LANGS = TEXT_LANGS | set(AFRICA_G2P_CODES)
 
 
 def normalize_lang(lang):
@@ -29,11 +28,17 @@ def normalize_lang(lang):
     return key
 
 
+def normalize_text(text):
+    return " ".join(str(text).strip().split())
+
+
 def to_ipa(text, lang):
     from africa_g2p import g2p as africa_g2p
 
     lang = normalize_lang(lang)
-    text = " ".join(str(text).strip().split())
+    if lang in TEXT_LANGS:
+        raise ValueError(f"{lang} uses transcript text, not africa-g2p")
+    text = normalize_text(text)
     if not text:
         return ""
     return africa_g2p(text, lang=AFRICA_G2P_CODES[lang], output="ipa").strip()

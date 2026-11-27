@@ -5,20 +5,17 @@ import torch
 import yaml
 from pocket_tts import TTSModel
 
-from .g2p import to_ipa
+from .g2p import TEXT_LANGS, normalize_lang, normalize_text, to_ipa
 from .guidance import GuidedTTSModel
-from .translator import Translator, should_translate
 
 
 class UnifiedTTS:
-    def __init__(self, model, device, cfg, temperature, use_t5):
+    def __init__(self, model, device, cfg, temperature):
         self.model = model
         self.device = device
         self.cfg = cfg
         self.temperature = temperature
-        self.use_t5 = use_t5
         self.sample_rate = model.sample_rate
-        self.translator = None
         self._states = {}
 
     @classmethod
@@ -30,7 +27,6 @@ class UnifiedTTS:
         device=None,
         cfg=2.0,
         temperature=0.3,
-        use_t5=True,
     ):
         device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         config = yaml.safe_load(Path(base_config).read_text(encoding="utf-8"))
@@ -45,22 +41,20 @@ class UnifiedTTS:
         model = TTSModel.load_model(config=str(config_path), temp=temperature).to(device)
         if cfg != 1.0:
             model = GuidedTTSModel.wrap(model, cfg)
-        return cls(model, device, cfg, temperature, use_t5)
-
-    def _translator(self):
-        if self.use_t5 and self.translator is None:
-            self.translator = Translator(device=self.device)
-        return self.translator
+        return cls(model, device, cfg, temperature)
 
     def phonemize(self, text, lang):
-        translated = None
-        if self.use_t5 and should_translate(lang):
-            translated = self._translator().translate(text)
-            text = translated
+        lang = normalize_lang(lang)
+        if lang in TEXT_LANGS:
+            model_text = normalize_text(text)
+            frontend = "transcript"
+        else:
+            model_text = to_ipa(text, lang)
+            frontend = "africa-g2p"
         return {
-            "text": text,
-            "translated_text": translated,
-            "ipa": to_ipa(text, lang),
+            "text": model_text,
+            "translated_text": None,
+            "frontend": frontend,
         }
 
     def _state(self, voice):
@@ -70,12 +64,12 @@ class UnifiedTTS:
         return self._states[key]
 
     def generate(self, text, lang, voice, out=None, seed=None):
-        phonemes = self.phonemize(text, lang)
+        model_input = self.phonemize(text, lang)
         if seed is not None:
             torch.manual_seed(seed)
-        audio = self.model.generate_audio(self._state(voice), phonemes["ipa"], max_tokens=250)
+        audio = self.model.generate_audio(self._state(voice), model_input["text"], max_tokens=250)
         audio = audio.detach().cpu().numpy().astype("float32")
-        result = {**phonemes, "audio": audio, "voice": str(voice)}
+        result = {**model_input, "audio": audio, "voice": str(voice)}
         if out is not None:
             sf.write(out, audio, self.sample_rate)
             result["wav"] = str(out)

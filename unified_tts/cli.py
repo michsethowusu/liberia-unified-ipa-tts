@@ -24,8 +24,6 @@ def build_parser():
     parser.add_argument("--cfg", type=float, default=2.0)
     parser.add_argument("--temperature", type=float, default=0.3)
     parser.add_argument("--seed", type=int, default=2026)
-    parser.add_argument("--t5", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--no-t5", action="store_true", help="Disable Kolokwa T5 normalization")
     parser.add_argument("--list-langs", action="store_true")
     return parser
 
@@ -45,7 +43,6 @@ def main():
         device=args.device,
         cfg=args.cfg,
         temperature=args.temperature,
-        use_t5=not args.no_t5,
     )
 
     if args.batch:
