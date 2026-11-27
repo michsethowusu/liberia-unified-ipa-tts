@@ -23,4 +23,7 @@ def normalize_style(language, text_style=None):
 
 
 def condition_prefix(language, text_style=None):
-    return CONDITION_PREFIXES[normalize_style(language, text_style)]
+    style = str(text_style or "").strip().lower()
+    if style in STYLE_PREFIXES:
+        return STYLE_PREFIXES[style]
+    return CONDITION_PREFIXES[normalize_style(language, style)]
