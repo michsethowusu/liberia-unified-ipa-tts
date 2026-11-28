@@ -5,11 +5,11 @@ Training and inference code for a unified Pocket TTS model covering Kolokwa/Libe
 ## Inference pipeline
 
 - No T5 model is used at training or inference time.
-- `kolokwa` accepts Liberian English transcript text or standard English text directly -> TTS model.
-- `liberian_english` is folded into the `kolokwa` training bucket.
-- `loma`: text -> `africa-g2p` code `lom` -> TTS model.
-- `kpelle`: text -> `africa-g2p` code `xpe` -> TTS model.
-- Language labels are metadata, not conditioning tokens.
+- `kolokwa`: text -> `<lang:kolokwa>` prefix -> TTS model.
+- `liberian_english`: text -> `<lang:liberian_english>` prefix -> TTS model.
+- `loma`: text -> `africa-g2p` code `lom` -> `<lang:loma>` prefix -> TTS model.
+- `kpelle`: text -> `africa-g2p` code `xpe` -> `<lang:kpelle>` prefix -> TTS model.
+- Language labels are conditioning tokens stored as `condition_prefix` in the manifest and prepended during inference.
 
 ## Setup
 
@@ -108,7 +108,7 @@ bash training/scripts/train_teacher.sh
 bash training/scripts/train_distill.sh
 ```
 
-The guided teacher config is `training/configs/finetune_guided_tts.yaml`; CFG-baked student configs are `training/configs/distill_guided_100m.yaml` and `training/configs/distill_guided_30m.yaml`.
+The guided teacher config is `training/configs/finetune_guided_tts.yaml`. The canonical CFG-baked student config is `training/configs/distill_guided_samewidth_110m.yaml`: a same-width 6-layer student that copies the teacher text table, flow head, EOS head, and latent stats directly. Width-reduced PCA configs remain in `training/configs/` as experiments and are not the recommended release path.
 
 The training scripts expect the H200 paths used in this project:
 
