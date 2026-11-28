@@ -61,44 +61,25 @@ def load_cache(paths):
     return cache
 
 
-def sample_balanced_le(rows, balance_to, seed=2026):
-    if not balance_to:
-        return rows
-    target = sum(float(r.get("duration", 0)) for r in rows if r.get("language") == balance_to) / 3600.0
-    le_rows = [r for r in rows if r.get("language") == "liberian_english"]
-    if not target or not le_rows:
-        return rows
-    pool = list(le_rows)
-    random.Random(seed).shuffle(pool)
-    chosen = set()
-    hours = 0.0
-    for row in pool:
-        if hours >= target:
-            break
-        chosen.add(row["_index"])
-        hours += float(row.get("duration", 0)) / 3600.0
-    sampled = [r for r in rows if r.get("language") != "liberian_english" or r["_index"] in chosen]
-    print(f"balanced liberian_english to {hours:.2f}h (target {target:.2f}h)", flush=True)
-    return sampled
-
-
-def load_rows(path, balance_to):
+def load_rows(path):
     rows = []
     with Path(path).open(encoding="utf-8") as fin:
         for line in fin:
             row = json.loads(line)
             row["_index"] = len(rows)
             rows.append(row)
-    return sample_balanced_le(rows, balance_to)
+    return rows
 
 
-def collect(manifests, cache, limit, key_index, key_count, balance_to, languages):
+def collect(manifests, cache, limit, key_index, key_count, sources, languages):
     rows = []
     seen = set()
     total = 0
     for manifest in manifests:
-        for row in load_rows(manifest, balance_to):
-            if row.get("language") not in languages:
+        for row in load_rows(manifest):
+            if languages and row.get("language") not in languages:
+                continue
+            if sources and row.get("source") not in sources:
                 continue
             row_id = str(row.get("id") or "")
             text = str(row.get("transcript_orig") or row.get("transcript") or "").strip()
@@ -141,9 +122,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--manifests", nargs="+", required=True)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--cache", nargs="+", type=Path, default=[])
     ap.add_argument("--backend", choices=["gemini", "gemini-live"], default="gemini-live")
-    ap.add_argument("--balance-le-to", default="kolokwa")
-    ap.add_argument("--languages", nargs="+", default=["liberian_english", "kolokwa"])
+    ap.add_argument("--sources", nargs="+", default=["kolokwa_jw_formal"])
+    ap.add_argument("--languages", nargs="+")
     ap.add_argument("--model")
     ap.add_argument("--key-file", type=Path, default=os.environ.get("GEMINI_KEY_FILE"))
     ap.add_argument("--key-index", type=int, default=0)
@@ -162,15 +144,15 @@ def main():
         else "gemini-3.1-flash-tts-preview"
     )
 
-    cache = load_cache([args.out])
+    cache = load_cache(list(args.cache) + [args.out])
     rows = collect(
         args.manifests,
         cache,
         args.limit,
         args.key_index,
         args.key_count,
-        args.balance_le_to,
-        set(args.languages),
+        set(args.sources),
+        set(args.languages) if args.languages else None,
     )
     print(
         f"rewriting {len(rows):,} rows with {args.backend}/{model} key {args.key_index + 1}/{len(keys)}; "

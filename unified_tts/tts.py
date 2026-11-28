@@ -4,10 +4,12 @@ import soundfile as sf
 import torch
 import yaml
 from pocket_tts import TTSModel
+from pocket_tts.utils.utils import download_if_necessary
 
 from .g2p import TEXT_LANGS, normalize_lang, normalize_text, to_ipa
 from .guidance import GuidedTTSModel
 from .tags import condition_prefix
+from .voices import builtin_voice_path
 
 
 class UnifiedTTS:
@@ -26,20 +28,25 @@ class UnifiedTTS:
         tokenizer,
         base_config,
         device=None,
-        cfg=2.0,
+        cfg=1.0,
         temperature=0.3,
+        eos_threshold=None,
     ):
         device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        config = yaml.safe_load(Path(base_config).read_text(encoding="utf-8"))
-        config["weights_path"] = str(checkpoint)
+        config_path = Path(download_if_necessary(str(base_config)))
+        weights_path = Path(download_if_necessary(str(checkpoint)))
+        config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        config["weights_path"] = str(weights_path)
         config["replace_characters"] = {}
         config["capitalize_first_letter"] = False
         config["flow_lm"]["lookup_table"]["tokenizer"] = "tokenizers"
         config["flow_lm"]["lookup_table"]["tokenizer_path"] = str(tokenizer)
         config["flow_lm"]["lookup_table"]["n_bins"] = 4000
-        config_path = Path(checkpoint).with_name("unified_inference_config.yaml")
+        config_path = weights_path.with_name("unified_inference_config.yaml")
         config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
-        model = TTSModel.load_model(config=str(config_path), temp=temperature).to(device)
+        model = TTSModel.load_model(
+            config=str(config_path), temp=temperature, eos_threshold=eos_threshold
+        ).to(device)
         if cfg != 1.0:
             model = GuidedTTSModel.wrap(model, cfg)
         return cls(model, device, cfg, temperature)
@@ -66,7 +73,10 @@ class UnifiedTTS:
             self._states[key] = self.model.get_state_for_audio_prompt(voice)
         return self._states[key]
 
-    def generate(self, text, lang, voice, out=None, seed=None, style=None):
+    def generate(self, text, lang, voice=None, out=None, seed=None, style=None):
+        voice = voice or builtin_voice_path(lang)
+        if voice is None:
+            raise ValueError(f"no built-in voice prompt for language: {lang}")
         model_input = self.phonemize(text, lang, style)
         if seed is not None:
             torch.manual_seed(seed)

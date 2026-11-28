@@ -9,6 +9,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from unified_tts.tags import condition_prefix
 
 TEXT_LANGS = {"kolokwa", "liberian_english"}
+JW_SOURCE = "kolokwa_jw_formal"
+BIBLE_SOURCE = "kolokwa_bible"
+REWRITE_SOURCES = {JW_SOURCE, BIBLE_SOURCE}
+DROP_SOURCES = {"liberian_english", "kolokwa_movies"}
 
 
 def load_rewrite_cache(paths):
@@ -108,7 +112,27 @@ def text_row(row):
     return out
 
 
-def transform_row(row, rewrites):
+def split_jw_rows(rows):
+    candidates = [row for row in rows if row.get("source") == JW_SOURCE]
+    candidates.sort(key=lambda row: (-float(row.get("duration", 0) or 0), str(row.get("id") or "")))
+    totals = {"liberian_english": 0.0, "kolokwa": 0.0}
+    counts = {"liberian_english": 0, "kolokwa": 0}
+    assignment = {}
+    for row in candidates:
+        target = "liberian_english" if totals["liberian_english"] <= totals["kolokwa"] else "kolokwa"
+        row_id = str(row.get("id") or "")
+        assignment[row_id] = target
+        totals[target] += float(row.get("duration", 0) or 0)
+        counts[target] += 1
+    print(
+        f"jw split: liberian_english {counts['liberian_english']:,} rows / {totals['liberian_english'] / 3600:.2f}h; "
+        f"kolokwa {counts['kolokwa']:,} rows / {totals['kolokwa'] / 3600:.2f}h",
+        flush=True,
+    )
+    return assignment
+
+
+def transform_row(row, rewrites, jw_language=None):
     row = {key: value for key, value in row.items() if key != "_index"}
     source_language = row.get("language", "")
     if source_language not in TEXT_LANGS:
@@ -116,24 +140,28 @@ def transform_row(row, rewrites):
         return [row]
 
     base = text_row(row)
-    base["language"] = "kolokwa"
     base["source_language"] = source_language
     base["source_transcript"] = str(row.get("transcript_orig") or row.get("transcript") or "")
-    base["text_style"] = "liberian_english" if source_language == "liberian_english" else "kolokwa"
-    base["condition_prefix"] = condition_prefix("kolokwa", base["text_style"])
 
-    rewrite = rewrites.get(str(row.get("id") or ""))
-    if not rewrite:
-        return [base]
+    if row.get("source") in REWRITE_SOURCES:
+        target = jw_language or "kolokwa"
+        base["language"] = target
+        base["text_style"] = target
+        base["condition_prefix"] = condition_prefix(target, target)
+        rewrite = rewrites.get(str(row.get("id") or ""))
+        if not rewrite:
+            return [base]
+        standard = dict(base)
+        standard["id"] = f"{row.get('id', '')}:standard_english"
+        standard["transcript"] = " ".join(rewrite.split())
+        standard["transcript_orig"] = standard["transcript"]
+        standard["words"] = align_rewrite(standard["transcript"], row.get("words") or [])
+        return [base, standard]
 
-    standard = dict(base)
-    standard["id"] = f"{row.get('id', '')}:standard_english"
-    standard["transcript"] = " ".join(rewrite.split())
-    standard["transcript_orig"] = standard["transcript"]
-    standard["words"] = align_rewrite(standard["transcript"], row.get("words") or [])
-    standard["text_style"] = "standard_english"
-    standard["condition_prefix"] = condition_prefix("kolokwa", "standard_english")
-    return [base, standard]
+    base["language"] = "kolokwa"
+    base["text_style"] = "kolokwa"
+    base["condition_prefix"] = condition_prefix("kolokwa", "kolokwa")
+    return [base]
 
 
 def load_rows(path):
@@ -144,27 +172,6 @@ def load_rows(path):
             row["_index"] = len(rows)
             rows.append(row)
     return rows
-
-
-def sample_balanced_le(rows, balance_to, seed=2026):
-    if not balance_to:
-        return rows
-    target = sum(float(r.get("duration", 0)) for r in rows if r.get("language") == balance_to) / 3600.0
-    le_rows = [r for r in rows if r.get("language") == "liberian_english"]
-    if not target or not le_rows:
-        return rows
-    pool = list(le_rows)
-    random.Random(seed).shuffle(pool)
-    chosen = set()
-    hours = 0.0
-    for row in pool:
-        if hours >= target:
-            break
-        chosen.add(row["_index"])
-        hours += float(row.get("duration", 0)) / 3600.0
-    sampled = [r for r in rows if r.get("language") != "liberian_english" or r["_index"] in chosen]
-    print(f"balanced liberian_english to {hours:.2f}h (target {target:.2f}h)", flush=True)
-    return sampled
 
 
 def load_hifi(path, hours, seed, prefix):
@@ -179,9 +186,9 @@ def load_hifi(path, hours, seed, prefix):
             rows.append(
                 {
                     "id": f"hifi_{prefix}_{len(rows):07d}",
-                    "language": "english",
-                    "text_style": "standard_english",
-                    "condition_prefix": condition_prefix("english", "english_tts"),
+                    "language": "liberian_english",
+                    "text_style": "liberian_english",
+                    "condition_prefix": condition_prefix("liberian_english", "liberian_english"),
                     "g2p": "eng",
                     "iso": "eng",
                     "transcript": text,
@@ -217,15 +224,17 @@ def write_row(fout, row, counts, hours, skipped):
     return skipped
 
 
-def convert(inp, out, rewrites, balance_to, hifi_in, hifi_hours, hifi_prefix):
+def convert(inp, out, rewrites, hifi_in, hifi_hours, hifi_prefix):
     counts = defaultdict(int)
     hours = defaultdict(float)
     skipped = 0
-    rows = sample_balanced_le(load_rows(inp), balance_to)
+    rows = [row for row in load_rows(inp) if row.get("source") not in DROP_SOURCES]
+    jw_split = split_jw_rows(rows)
     hifi_rows = load_hifi(hifi_in, hifi_hours, 2026, hifi_prefix) if hifi_in else []
     with Path(out).open("w", encoding="utf-8") as fout:
         for row in rows:
-            for result in transform_row(row, rewrites):
+            jw_language = jw_split.get(str(row.get("id") or ""))
+            for result in transform_row(row, rewrites, jw_language):
                 skipped = write_row(fout, result, counts, hours, skipped)
         for row in hifi_rows:
             skipped = write_row(fout, row, counts, hours, skipped)
@@ -239,7 +248,6 @@ def main():
     ap.add_argument("--train-in")
     ap.add_argument("--valid-in")
     ap.add_argument("--rewrite-cache", nargs="+", type=Path)
-    ap.add_argument("--balance-le-to", default="kolokwa")
     ap.add_argument("--hifi-train", type=Path)
     ap.add_argument("--hifi-valid", type=Path)
     ap.add_argument("--hifi-train-hours", type=float, default=20.0)
@@ -254,7 +262,6 @@ def main():
             args.train_in,
             args.out / "train.jsonl",
             rewrites,
-            args.balance_le_to,
             args.hifi_train,
             args.hifi_train_hours,
             "train",
@@ -264,7 +271,6 @@ def main():
             args.valid_in,
             args.out / "valid.jsonl",
             rewrites,
-            args.balance_le_to,
             args.hifi_valid,
             args.hifi_valid_hours,
             "valid",

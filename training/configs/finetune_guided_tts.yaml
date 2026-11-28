@@ -1,4 +1,4 @@
-model_config: hf://AfriSpeech/africa-tts-base/config.yaml
+model_config: /mnt/volume_d2wey28/models/africa-tts-base/config.yaml
 model_overrides:
   flow_lm.lookup_table.tokenizer: tokenizers
   flow_lm.lookup_table.tokenizer_path: /mnt/volume_d2wey28/projects/liberian-english-speech/unified_guided_tts/tokenizer/ipa_sp4000.json

@@ -2,6 +2,7 @@ import argparse
 import html
 import json
 import random
+import shutil
 from collections import defaultdict
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import soundfile as sf
 
 from .cli import DEFAULT_BASE_CONFIG, DEFAULT_CHECKPOINT, DEFAULT_TOKENIZER
 from .tts import UnifiedTTS
+from .voices import builtin_voice_path
 
 LANGS = ["kolokwa", "liberian_english", "loma", "kpelle"]
 
@@ -74,7 +76,7 @@ def pick_texts(rows, prompt_id, count, rng):
     return pool[:count]
 
 
-def write_html(out_dir, metadata):
+def write_html(out_dir, metadata, langs):
     parts = [
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">",
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
@@ -92,7 +94,7 @@ def write_html(out_dir, metadata):
     by_lang = defaultdict(list)
     for sample in metadata["samples"]:
         by_lang[sample["language"]].append(sample)
-    for lang in LANGS:
+    for lang in langs:
         samples = by_lang[lang]
         if not samples:
             continue
@@ -118,14 +120,17 @@ def main():
     parser.add_argument("--manifest", type=Path, default=Path("/mnt/volume_d2wey28/data/unified_guided_tts/manifests/valid.jsonl"))
     parser.add_argument("--prompts", type=Path, help="JSONL with language and text fields for out-of-domain samples")
     parser.add_argument("--out", type=Path, default=Path("/mnt/volume_d2wey28/data/unified_ipa_tts/samples/teacher_best_inference"))
-    parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
-    parser.add_argument("--tokenizer", type=Path, default=DEFAULT_TOKENIZER)
-    parser.add_argument("--base-config", type=Path, default=DEFAULT_BASE_CONFIG)
+    parser.add_argument("--checkpoint", default=DEFAULT_CHECKPOINT)
+    parser.add_argument("--tokenizer", default=DEFAULT_TOKENIZER)
+    parser.add_argument("--base-config", default=DEFAULT_BASE_CONFIG)
     parser.add_argument("--per-lang", type=int, default=3)
-    parser.add_argument("--cfg", type=float, default=2.0)
+    parser.add_argument("--langs", default=",".join(LANGS))
+    parser.add_argument("--cfg", type=float, default=1.0)
     parser.add_argument("--temperature", type=float, default=0.3)
+    parser.add_argument("--eos-threshold", type=float)
     parser.add_argument("--seed", type=int, default=2026)
     args = parser.parse_args()
+    langs = [lang.strip() for lang in args.langs.split(",") if lang.strip()]
 
     args.out.mkdir(parents=True, exist_ok=True)
     audio_dir = args.out / "audio"
@@ -137,15 +142,16 @@ def main():
         base_config=args.base_config,
         cfg=args.cfg,
         temperature=args.temperature,
+        eos_threshold=args.eos_threshold,
     )
 
-    manifest_rows = [row for row in load_jsonl(args.manifest) if row.get("language") in LANGS]
+    manifest_rows = [row for row in load_jsonl(args.manifest) if row.get("language") in langs]
     voice_by_lang = defaultdict(list)
     for row in manifest_rows:
         voice_by_lang[row["language"]].append(row)
 
     if args.prompts:
-        sample_rows = load_prompts(args.prompts, LANGS)
+        sample_rows = load_prompts(args.prompts, langs)
     else:
         sample_rows = [
             {
@@ -171,17 +177,24 @@ def main():
         "samples": [],
     }
 
-    for lang in LANGS:
-        prompt = pick_prompt(voice_by_lang[lang], rng)
-        voice_audio, voice_sr = sf.read(prompt["path"], dtype="float32", always_2d=True)
-        voice_audio = voice_audio[: int(4.0 * voice_sr)]
+    for lang in langs:
+        builtin = builtin_voice_path(lang)
         voice_path = audio_dir / f"{lang}_voice.wav"
-        sf.write(voice_path, voice_audio, voice_sr)
+        if builtin:
+            shutil.copyfile(builtin, voice_path)
+            prompt_id = f"builtin:{lang}"
+            prompt = {}
+        else:
+            prompt = pick_prompt(voice_by_lang[lang], rng)
+            voice_audio, voice_sr = sf.read(prompt["path"], dtype="float32", always_2d=True)
+            voice_audio = voice_audio[: int(4.0 * voice_sr)]
+            sf.write(voice_path, voice_audio, voice_sr)
+            prompt_id = prompt["id"]
         if args.prompts:
             texts = sample_by_lang[lang][: args.per_lang]
         else:
             texts = pick_texts(voice_by_lang[lang], prompt.get("id"), args.per_lang, rng)
-        print(f"{lang}: voice {prompt['id']}, {len(texts)} texts", flush=True)
+        print(f"{lang}: voice {prompt_id}, {len(texts)} texts", flush=True)
         for index, row in enumerate(texts):
             input_text = str(row.get("text", row.get("transcript_orig", ""))).strip()
             wav_path = audio_dir / f"{lang}_{index + 1:02d}.wav"
@@ -190,7 +203,7 @@ def main():
                 lang,
                 voice_path,
                 out=wav_path,
-                seed=args.seed + index + LANGS.index(lang) * 1000,
+                seed=args.seed + index + langs.index(lang) * 1000,
                 style=row.get("style"),
             )
             metadata["samples"].append(
@@ -205,6 +218,7 @@ def main():
                     "wav_rel": f"audio/{wav_path.name}",
                     "voice": str(voice_path),
                     "voice_rel": f"audio/{voice_path.name}",
+                    "voice_id": prompt_id,
                     "source": row.get("source"),
                     "source_id": row.get("source_id", row.get("id")),
                 }
@@ -212,7 +226,7 @@ def main():
             print(f"  {wav_path.name}: {result['text']}", flush=True)
 
     (args.out / "meta.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
-    write_html(args.out, metadata)
+    write_html(args.out, metadata, langs)
     print(f"done: {len(metadata['samples'])} samples in {args.out}", flush=True)
 
 

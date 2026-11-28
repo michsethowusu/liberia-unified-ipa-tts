@@ -21,7 +21,8 @@ pip install -r requirements.txt
 
 ## Guided finetune data
 
-Liberian English rows are relabeled `kolokwa`, subsampled to match the Kolokwa hours, and duplicated: one row keeps the Liberian English transcript, and one row uses a Gemini-rewritten standard English transcript. Kolokwa rows are duplicated the same way so the model accepts standard English prompts but speaks Kolokwa. Loma and Kpelle keep `africa-g2p` IPA. Language/style conditioning is a leading reserved token (`<lang:kolokwa>`, `<lang:liberian_english>`, `<lang:standard_english>`, `<lang:loma>`, `<lang:kpelle>`) stored as `condition_prefix` in each manifest row; standard-English prompts paired with Kolokwa/Liberian-English audio use `<lang:kolokwa>` so the model speaks Kolokwa. The H200 loader prepends it after word-cuts, and inference passes the same token. A fresh tokenizer is trained with those tokens reserved, the text embedding is reset, and the rest is finetuned from `AfriSpeech/africa-tts-base` rather than from scratch. A small HiFiTTS-2 replay set keeps standard English speech (`<lang:standard_english>`) from being forgotten.
+Sources `liberian_english` and `kolokwa_movies` from `michsethowusu/liberian-english-speech` are dropped. `kolokwa_jw_formal` rows are rewritten, then split by duration so roughly half of the rows/hours are trained with `<lang:liberian_english>` and half with `<lang:kolokwa>`. For both halves, the original JW Kolokwa-style wording and the Gemini-rewritten standard-English wording are paired on the same audio. `kolokwa_bible` is also rewritten, and each Bible clip is paired under `<lang:kolokwa>` with its original wording and the rewritten standard-English wording. Loma and Kpelle keep `africa-g2p` IPA.
+ Four reserved tokens (`<lang:kolokwa>`, `<lang:liberian_english>`, `<lang:loma>`, `<lang:kpelle>`) remain active and are stored as `condition_prefix` in each manifest row. There is no standalone standard-English tag: rewritten JW text and HiFiTTS-2 replay both use `<lang:liberian_english>` so clean English pronunciation reinforces Liberian English. The H200 loader prepends the token after word-cuts, and inference passes the same token. A fresh tokenizer is trained with those tokens reserved, the text embedding is reset, and the rest is finetuned from `AfriSpeech/africa-tts-base` rather than from scratch.
 
 ```bash
 pip install "afrispeech-synth[gemini] @ git+https://github.com/michsethowusu/gemini-datagen.git"
@@ -33,7 +34,7 @@ for i in $(seq 0 $((N - 1))); do
     --manifests /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/train.jsonl /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl \
     --out /mnt/volume_d2wey28/data/unified_guided_tts/rewrites/shard_${i}.jsonl \
     --key-file "$KEYS" --key-index "$i" --key-count "$N" \
-    --backend gemini-live --balance-le-to kolokwa --workers 3 &
+    --backend gemini-live --sources kolokwa_jw_formal --workers 3 &
 done
 wait
 
@@ -41,7 +42,6 @@ python training/scripts/build_guided_manifests.py \
   --train-in /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/train.jsonl \
   --valid-in /mnt/volume_d2wey28/data/unified_ipa_tts/manifests/valid.jsonl \
   --rewrite-cache /mnt/volume_d2wey28/data/unified_guided_tts/rewrites/shard_*.jsonl \
-  --balance-le-to kolokwa \
   --hifi-train /mnt/volume_d2wey28/data/africa-tts/aligned_ctc/hifitts2_train.jsonl \
   --hifi-valid /mnt/volume_d2wey28/data/africa-tts/aligned_ctc/hifitts2_valid.jsonl \
   --hifi-train-hours 20 --hifi-valid-hours 0.5 \
@@ -57,11 +57,10 @@ bash training/scripts/train_guided.sh
 python -m unified_tts.cli \
   --lang kolokwa \
   --text "Wetin we coming learn about our brother and sister them" \
-  --voice /path/to/voice.wav \
   --out out/kolokwa.wav
 ```
 
-Use `--cfg 1.0` for a distilled model.
+The CLI defaults to `AfriSpeech/liberian-unified-ipa-tts` with `cfg=1.0` and a bundled per-language voice prompt. Pass `--voice /path/to/voice.wav` to override the voice, or `--cfg 2.0` with `--checkpoint hf://AfriSpeech/liberian-unified-ipa-tts-teacher/model.safetensors` for the teacher.
 
 ## Regenerate sample page
 
@@ -75,7 +74,7 @@ This writes `audio/*.wav`, `meta.json`, and `index.html`.
 
 ## Out-of-domain samples
 
-Pass `--prompts` with a JSONL file of `{ "language": "kpelle", "text": "..." }` rows. Voice prompts still come from the manifest, but the spoken text comes from the prompt file.
+Pass `--prompts` with a JSONL file of `{ "language": "kpelle", "text": "..." }` rows. Voice prompts come from `unified_tts/voice_prompts/`, but the spoken text comes from the prompt file.
 
 ```bash
 python -m unified_tts.generate_samples \
@@ -89,6 +88,17 @@ Useful text sources:
 - Kpelle UDHR: `http://efele.net/udhr/d/udhr_gkp.html` (Guinean Kpelle; verify orthography against Liberian Kpelle)
 - Loma and Kpelle: `https://github.com/AfriSpeech/africa-corpus-builder` with language codes `lom` and `xpe`
 
+## CER during training
+
+CER is computed with the CPU-only `sherpa-onnx` Omnilingual ASR CTC 300M v2 model, so it can run beside GPU training. It reports macro and micro CER overall, per language, and per conditioning prefix for both natural evaluation audio and generated TTS audio. The ASR model is not language-conditioned in the sherpa CTC API and is imperfect for these varieties, so use the natural-audio baseline as the floor and compare TTS checkpoints relative to it.
+
+```bash
+bash training/scripts/eval_cer.sh natural_baseline /path/to/checkpoint.safetensors
+tmux new -s cer-watch -d 'bash training/scripts/watch_eval_cer.sh'
+```
+
+Results go to `/mnt/volume_d2wey28/projects/liberian-english-speech/unified_guided_tts/cer/`. Override `SHERPA_DIR` to use the int8 model; override `PER_LANG`, `NATURAL_PER_LANG`, `POLL_SECS`, `RUN_DIR`, or `OUT_ROOT` as needed.
+
 ## Training
 
 Training configs and scripts are in `training/`.
@@ -98,7 +108,7 @@ bash training/scripts/train_teacher.sh
 bash training/scripts/train_distill.sh
 ```
 
-The teacher config is `training/configs/finetune_unified_ipa.yaml`; the six-layer distillation config is `training/configs/depth_distill_unified_ipa.yaml`.
+The guided teacher config is `training/configs/finetune_guided_tts.yaml`; CFG-baked student configs are `training/configs/distill_guided_100m.yaml` and `training/configs/distill_guided_30m.yaml`.
 
 The training scripts expect the H200 paths used in this project:
 
@@ -109,7 +119,9 @@ The training scripts expect the H200 paths used in this project:
 
 ## Models
 
-- TTS checkpoint used for sample generation: `runs/unified_ipa_teacher/best_model.safetensors`
+- Default distilled TTS: `hf://AfriSpeech/liberian-unified-ipa-tts/model.safetensors` (`cfg=1.0`)
+- Teacher TTS: `hf://AfriSpeech/liberian-unified-ipa-tts-teacher/model.safetensors` (`cfg=2.0`)
+- Smaller distilled TTS: `hf://AfriSpeech/liberian-unified-ipa-tts-30m/model.safetensors` (`cfg=1.0`)
 - T5: `https://huggingface.co/AfriSpeech/t5-small-english-kolokwa`
 - Kolokwa G2P: `https://huggingface.co/michsethowusu/kolokwa-g2p-bible`
 - Liberian English G2P: `https://huggingface.co/michsethowusu/kolokwa-g2p-jw`

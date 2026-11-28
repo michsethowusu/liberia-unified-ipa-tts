@@ -5,25 +5,26 @@ from pathlib import Path
 from .g2p import SUPPORTED_LANGS
 from .tts import UnifiedTTS
 
-DEFAULT_CHECKPOINT = Path("/mnt/volume_d2wey28/projects/liberian-english-speech/unified_ipa_tts/runs/unified_ipa_teacher/best_model.safetensors")
-DEFAULT_TOKENIZER = Path("/mnt/volume_d2wey28/projects/liberian-english-speech/unified_ipa_tts/tokenizer/ipa_sp4000.json")
-DEFAULT_BASE_CONFIG = Path("/mnt/volume_d2wey28/projects/pocket-tts-twi/pocket_tts/config/english_2026-04_24l.yaml")
+DEFAULT_CHECKPOINT = "hf://AfriSpeech/liberian-unified-ipa-tts/model.safetensors"
+DEFAULT_TOKENIZER = "hf://AfriSpeech/liberian-unified-ipa-tts/tokenizer.json"
+DEFAULT_BASE_CONFIG = "hf://AfriSpeech/liberian-unified-ipa-tts/config.yaml"
 
 
 def build_parser():
     parser = argparse.ArgumentParser(description="Unified IPA TTS inference")
     parser.add_argument("--text")
     parser.add_argument("--lang")
-    parser.add_argument("--style", help="kolokwa, liberian_english, standard_english, loma, or kpelle")
+    parser.add_argument("--style", help="kolokwa, liberian_english, loma, or kpelle")
     parser.add_argument("--voice")
     parser.add_argument("--out", type=Path)
     parser.add_argument("--batch", type=Path, help="JSON list of {lang,text,voice,out} objects")
-    parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
-    parser.add_argument("--tokenizer", type=Path, default=DEFAULT_TOKENIZER)
-    parser.add_argument("--base-config", type=Path, default=DEFAULT_BASE_CONFIG)
+    parser.add_argument("--checkpoint", default=DEFAULT_CHECKPOINT)
+    parser.add_argument("--tokenizer", default=DEFAULT_TOKENIZER)
+    parser.add_argument("--base-config", default=DEFAULT_BASE_CONFIG)
     parser.add_argument("--device", default=None)
-    parser.add_argument("--cfg", type=float, default=2.0)
+    parser.add_argument("--cfg", type=float, default=1.0)
     parser.add_argument("--temperature", type=float, default=0.3)
+    parser.add_argument("--eos-threshold", type=float)
     parser.add_argument("--seed", type=int, default=2026)
     parser.add_argument("--list-langs", action="store_true")
     return parser
@@ -34,8 +35,8 @@ def main():
     if args.list_langs:
         print("\n".join(sorted(SUPPORTED_LANGS)))
         return
-    if not args.batch and (not args.text or not args.lang or not args.voice):
-        raise SystemExit("provide --text --lang --voice, or --batch")
+    if not args.batch and (not args.text or not args.lang):
+        raise SystemExit("provide --text --lang, or --batch")
 
     tts = UnifiedTTS.load(
         checkpoint=args.checkpoint,
@@ -44,6 +45,7 @@ def main():
         device=args.device,
         cfg=args.cfg,
         temperature=args.temperature,
+        eos_threshold=args.eos_threshold,
     )
 
     if args.batch:
@@ -54,7 +56,7 @@ def main():
             result = tts.generate(
                 item["text"],
                 item["lang"],
-                item["voice"],
+                item.get("voice"),
                 out=out,
                 seed=args.seed + index,
                 style=item.get("style", item.get("text_style")),

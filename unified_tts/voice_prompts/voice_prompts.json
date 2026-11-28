@@ -1,0 +1,62 @@
+[
+  {
+    "language": "kolokwa",
+    "id": "kolokwa_bible:afrispeech_train_05178_seg001",
+    "source": "kolokwa_bible",
+    "text": "The boss man carry him in one empty office.",
+    "duration": 3.355,
+    "start": 618.8444,
+    "edge_ratio": 0.0,
+    "left": 0.0,
+    "right": 0.0,
+    "middle": 0.10118705034255981,
+    "path": "/mnt/volume_d2wey28/data/unified_ipa_tts/audio/kolokwa_bible/valid/train-00059.flac",
+    "file": "kolokwa.wav",
+    "wav": "voice_prompts/kolokwa.wav"
+  },
+  {
+    "language": "liberian_english",
+    "id": "kolokwa_jw:mwb_202603_202026082_p015_s00",
+    "source": "kolokwa_jw_formal",
+    "text": "Wetin you learn from the Bible reading this week da you want talk about?",
+    "duration": 3.82,
+    "start": 1192.6046,
+    "edge_ratio": 0.0,
+    "left": 0.0,
+    "right": 0.0,
+    "middle": 0.11408482491970062,
+    "path": "/mnt/volume_d2wey28/data/unified_ipa_tts/audio/kolokwa_jw/valid/train-00159.flac",
+    "file": "liberian_english.wav",
+    "wav": "/mnt/volume_d2wey28/projects/liberia-unified-ipa-tts/unified_tts/voice_prompts/liberian_english.wav"
+  },
+  {
+    "language": "loma",
+    "id": "loma:w_202604_2026366_p066_s00",
+    "source": "loma",
+    "text": "Ani ya ɣɛna laa-nɔwɔ-wosu ya ɣi-gaa-ziɛ ɣɛ le, tɔwɔ zɛɓɛi maa nɛɛ e kɛ?",
+    "duration": 3.24,
+    "start": 1123.7402,
+    "edge_ratio": 0.0006865564478160861,
+    "left": 5.154156679054722e-05,
+    "right": 8.336080645676702e-05,
+    "middle": 0.12141872197389603,
+    "path": "/mnt/volume_d2wey28/data/unified_ipa_tts/audio/loma/valid/train-00039.flac",
+    "file": "loma.wav",
+    "wav": "/mnt/volume_d2wey28/projects/liberia-unified-ipa-tts/unified_tts/voice_prompts/loma.wav"
+  },
+  {
+    "language": "kpelle",
+    "id": "kpelle:w_202502_2025291_p051_s00",
+    "source": "kpelle",
+    "text": "Pere sii kɛɛ leŋ ɓe Ziova a ku su mɛni lɛɛ lai?",
+    "duration": 3.5,
+    "start": 545.7504,
+    "edge_ratio": 0.002347561253987683,
+    "left": 2.1436351744341664e-05,
+    "right": 0.00025620771339163184,
+    "middle": 0.10913781821727753,
+    "path": "/mnt/volume_d2wey28/data/unified_ipa_tts/audio/kpelle/valid/train-00039.flac",
+    "file": "kpelle.wav",
+    "wav": "/mnt/volume_d2wey28/projects/liberia-unified-ipa-tts/unified_tts/voice_prompts/kpelle.wav"
+  }
+]
